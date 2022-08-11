@@ -1,6 +1,6 @@
 import os
 import sys
-from configs.configs_manager import ConfigManager
+from configs.config_manager import ConfigManager
 
 current_path = os.path.dirname(os.path.realpath(__file__)) 
 try:

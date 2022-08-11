@@ -2,6 +2,7 @@ import os
 import sys
 from configs.config_manager import ConfigManager
 from utils.logging_utils import LoggingUtils
+from loggers.logger_factory import LoggerFactory
 
 current_path = os.path.dirname(os.path.realpath(__file__)) 
 try:
@@ -24,6 +25,7 @@ class Learn2Discover:
         self.config_manager = ConfigManager.create_instance('.')
         self.config_manager.load_configs()
         LoggingUtils.get_instance().debug('Loaded Configurations.')
+        self.logger = LoggerFactory.get_logger(__class__.__name__)
     def run(self):
         pass
 

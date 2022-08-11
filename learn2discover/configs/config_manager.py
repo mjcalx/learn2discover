@@ -39,3 +39,5 @@ class ConfigManager:
         configs = self.get_yaml_configs()
         print('configs',configs)
         self.data_filepath = configs.get('sut_settings').get('data_filepath')
+        self.primary_logger_type = configs.get('log').get('primary_logger_type')
+        self.log_level = configs.get('log').get('log_level')

@@ -7,6 +7,8 @@ class ConfigManager:
     instance = None
     data_filepath = ''
 
+    primary_logger_type = 'console'
+    log_level = 'info'
     def __init__(self, workspace_dir):
         self.workspace_dir = workspace_dir
 

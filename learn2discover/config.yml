@@ -1,2 +1,5 @@
 sut_settings:
   data_filepath: data/example.csv
+log:
+  primary_logger_type: console
+  log_level: debug

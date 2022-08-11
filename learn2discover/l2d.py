@@ -1,6 +1,7 @@
 import os
 import sys
 from configs.config_manager import ConfigManager
+from utils.logging_utils import LoggingUtils
 
 current_path = os.path.dirname(os.path.realpath(__file__)) 
 try:
@@ -22,6 +23,7 @@ class Learn2Discover:
         pass
         self.config_manager = ConfigManager.create_instance('.')
         self.config_manager.load_configs()
+        LoggingUtils.get_instance().debug('Loaded Configurations.')
     def run(self):
         pass
 

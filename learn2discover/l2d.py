@@ -1,5 +1,6 @@
 import os
 import sys
+from configs.configs_manager import ConfigManager
 
 current_path = os.path.dirname(os.path.realpath(__file__)) 
 try:
@@ -19,6 +20,8 @@ class Learn2Discover:
 
     def __init__(self):
         pass
+        self.config_manager = ConfigManager.create_instance('.')
+        self.config_manager.load_configs()
     def run(self):
         pass
 

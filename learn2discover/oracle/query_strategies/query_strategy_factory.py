@@ -1,0 +1,26 @@
+from loggers.logger_factory import LoggerFactory
+from oracle.query_strategies.query_strategy import QueryStrategy
+from oracle.query_strategies.least_confidence_strategy import LeastConfidenceStrategy
+from oracle.query_strategies.entropy_strategy import EntropyStrategy
+from oracle.query_strategies.margin_sampling_strategy import MarginSamplingStrategy
+
+class QueryStrategyFactory:
+    def __init__(self):
+        self.logger = LoggerFactory.get_logger(__class__.__name__)
+        self.DEFAULT = LeastConfidenceStrategy
+        pass
+
+    def get_strategy(self, type_selection: str) -> QueryStrategy:
+        strategy_types = {
+            'entropy' : EntropyStrategy,
+            'least_confidence' : LeastConfidenceStrategy,
+            'margin_sampling' : MarginSamplingStrategy,
+        }
+        try:
+            strategy = strategy_types[type_selection]()
+        except KeyError:
+            self.logger.debug(f'QueryStrategy for "{type_selection}" not found. Defaulting to "least_confidence"')
+            strategy = self.DEFAULT()
+        finally:
+            self.logger.debug(f'Select QueryStrategy for "{type_selection}" : {str(type(strategy).__name__)}')        
+        return strategy

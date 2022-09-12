@@ -1,5 +1,18 @@
 sut_settings:
-  data_filepath: data/example.csv
+  model_path: models
+
+training_settings:
+  query_strategies: [entropye, least_confidence, margin_sampling]
+
+data_settings:
+  training_path: data/training_data
+  validation_path: data/validation_data
+  evaluation_path: data/evaluation_data
+  unlabelled_path: data/unlabelled_data
+  fair_csv_filename: fair.csv
+  unfair_csv_filename: unfair.csv
+
+
 log:
   primary_logger_type: console
   log_level: debug

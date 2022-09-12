@@ -5,10 +5,17 @@ import yaml
 class ConfigManager:
     config_file = 'config.yml'
     instance = None
-    data_filepath = ''
+    model_path = ''
+    training_path = ''
+    validation_path = ''
+    evaluation_path = ''
+    unlabelled_path = ''
+    fair_csv_filename = 'fair.csv'
+    unfair_csv_filename = 'unfair.csv'
 
     primary_logger_type = 'console'
     log_level = 'info'
+
     def __init__(self, workspace_dir):
         self.workspace_dir = workspace_dir
 
@@ -26,7 +33,7 @@ class ConfigManager:
         if ConfigManager.instance is not None:
             return ConfigManager.instance
         else:
-            print('Error!')
+            print('ERROR: Can\'t find ConfigManager instance')
 
     @staticmethod
     def create_instance(workspace_dir):
@@ -38,6 +45,15 @@ class ConfigManager:
     def load_configs(self):
         configs = self.get_yaml_configs()
         print('configs',configs)
-        self.data_filepath = configs.get('sut_settings').get('data_filepath')
+        self.model_path = configs.get('sut_settings').get('model_path')
+        self.training_path = configs.get('data_settings').get('training_path')
+        self.validation_path = configs.get('data_settings').get('validation_path')
+        self.evaluation_path = configs.get('data_settings').get('evaluation_path')
+        self.unlabelled_path = configs.get('data_settings').get('unlabelled_path')
+        self.fair_csv_filename = configs.get('data_settings').get('fair_csv_filename')
+        self.unfair_csv_filename = configs.get('data_settings').get('unfair_csv_filename')
+        self.query_strategies = configs.get('training_settings').get('query_strategies')
         self.primary_logger_type = configs.get('log').get('primary_logger_type')
         self.log_level = configs.get('log').get('log_level')
+
+        assert isinstance(self.query_strategies, list)

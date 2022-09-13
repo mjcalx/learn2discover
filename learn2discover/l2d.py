@@ -26,14 +26,17 @@ class Learn2Discover:
         self.config_manager = ConfigManager.create_instance('.')
         self.config_manager.load_configs()
         LoggingUtils.get_instance().debug('Loaded Configurations.')
-
-        self.logger = LoggerFactory.get_logger(__class__.__name__)
-        self.logger.debug('Loaded Logger.')
-        
-        self.dataset_manager = DatasetManager()
-        self.logger.debug('Loaded DatasetManager.')
-        
-        self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
+        try:
+            self.logger = LoggerFactory.get_logger(__class__.__name__)
+            self.logger.debug('Loaded Logger.')
+            
+            self.dataset_manager = DatasetManager()
+            self.logger.debug('Loaded DatasetManager.')
+            
+            self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
+        except BaseException as e:
+            self.logger.error(f"{e} Exiting...")
+            exit()
     def run(self):
         pass
 

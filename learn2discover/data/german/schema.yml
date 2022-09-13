@@ -1,0 +1,142 @@
+status_of_existing_checking_account:
+  type: categorical
+  description: "Status of existing checking account"
+  values:
+    A11 : " ... <   0       DM"
+    A12 : "  0 <= ... < 200 DM"
+    A13 : "... >= 200       DM / salary assignments for at least 1 year"
+    A14 : "no checking account"
+
+duration_in_month:
+  type: numerical
+  description: "Duration (in months)"
+
+credit_history:
+  type: categorical
+  values:
+    A30 : "no credits taken/all credits paid back duly"
+    A31 : "all credits at this bank paid back duly"
+    A32 : "existing credits paid back duly till now"
+    A33 : "delay in paying off in the past"
+    A34 : "critical account/other credits existing (not at this bank)"
+
+loan_purpose:  
+  type: categorical
+  values:
+    A40  : "car (new)"
+    A41  : "car (used)"
+    A42  : "furniture/equipment"
+    A43  : "radio/television"
+    A44  : "domestic appliances"
+    A45  : "repairs"
+    A46  : "education"
+    A47  : "(vacation - does not exist?)"
+    A48  : "retraining"
+    A49  : "business"
+    A410 : "others"
+
+credit_amount:  
+  type: numerical
+  description: "Credit amount"
+
+savings_account:  
+  type : categorical
+  description: "Savings account or bonds"
+  values:
+    A61 : "       ... <  100 DM"
+    A62 : "100 <= ... <  500 DM"
+    A63 : "500 <= ... < 1000 DM"
+    A64 : "       .. >= 1000 DM"
+    A65 : "unknown/ no savings account"
+
+present_employment_since:
+  type : categorical
+  values:
+    A71 : "unemployed"
+    A72 : "      ... < 1 year "
+    A73 : "1  <= ... < 4 years"
+    A74 : "4  <= ... < 7 years"
+    A75 : "      .. >= 7 years"
+
+installment_rate:
+  type : numerical
+  description: "Installment rate as % of disposable income"
+
+personal_status_and_sex:
+  type : categorical
+  values:
+    A91 : "male   : divorced/separated"
+    A92 : "female : divorced/separated/married"
+    A93 : "male   : single"
+    A94 : "male   : married/widowed"
+    A95 : "female : single"
+
+other_debtors_or_guarantors: 
+  type : categorical
+  values:
+    A101 : "none"
+    A102 : "co-applicant"
+    A103 : "guarantor"
+
+present_residence_since: 
+  type : numerical
+
+property: 
+  type : categorical
+  values:
+    A121 : "real estate"
+    A122 : "if not A121 : building society savings agreement/life insurance"
+    A123 : "if not A121/A122 : car or other, not in attribute 6"
+    A124 : "unknown / no property"
+
+age: 
+  type : numerical
+  description: "age in years"
+
+other_installment_plans: 
+  type : categorical
+  values:
+    A141 : "bank"
+    A142 : "stores"
+    A143 : "none"
+
+housing: 
+  type : categorical
+  values:
+    A151 : "rent"
+    A152 : "own"
+    A153 : "for free"
+
+existing_credits_at_this_bank 16: 
+  type : numerical
+  description: "Number of existing credits at this bank"
+
+job: 
+  type : categorical
+  values:
+    A171 : "unemployed/unskilled - non-resident"
+    A172 : "unskilled - resident"
+    A173 : "skilled employee / official"
+    A174 : "management / self-employed / highly qualified employee/officer"
+
+num_liable: 
+  type : numerical
+  description: "Number of people being liable to provide maintenance for"
+
+telephone: 
+  type : categorical
+  values:
+    A191 : "none"
+    A192 : "yes, registered under the customers name"
+
+is_foreign_worker: 
+  type : categorical
+  values:
+    A201 : "yes"
+    A202 : "no"
+
+credit_label:
+  type : categorical
+  values:
+    1 : "Good"
+    2 : "Bad"

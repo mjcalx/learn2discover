@@ -2,13 +2,14 @@ sut_settings:
   model_path: models
 
 training_settings:
-  query_strategies: [entropye, least_confidence, margin_sampling]
+  query_strategies: [entropy, least_confidence, margin_sampling]
 
 data_settings:
-  training_path: data/training_data
-  validation_path: data/validation_data
-  evaluation_path: data/evaluation_data
-  unlabelled_path: data/unlabelled_data
+  schema_file: data/german/schema.yml
+  training_path: data/german/training_data
+  validation_path: data/german/validation_data
+  evaluation_path: data/german/evaluation_data
+  unlabelled_path: data/german/unlabelled_data
   fair_csv_filename: fair.csv
   unfair_csv_filename: unfair.csv
 

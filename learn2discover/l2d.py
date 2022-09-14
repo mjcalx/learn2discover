@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from configs.config_manager import ConfigManager
 from utils.logging_utils import LoggingUtils
 from loggers.logger_factory import LoggerFactory
@@ -36,6 +37,7 @@ class Learn2Discover:
             self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
         except BaseException as e:
             self.logger.error(f"{e} Exiting...")
+            print(traceback.format_exc())
             exit()
     def run(self):
         pass

@@ -4,6 +4,10 @@ import yaml
 
 class ConfigManager:
     config_file = 'config.yml'
+    schema_file = ''
+    data_file = ''
+    column_names_included = False
+    index_column_included = False
     instance = None
     model_path = ''
     training_path = ''
@@ -47,16 +51,25 @@ class ConfigManager:
 
     def load_configs(self):
         configs = self.get_yaml_configs()
-        self.model_path = configs.get('sut_settings').get('model_path')
-        self.schema_file = configs.get('data_settings').get('schema_file')
-        self.training_path = configs.get('data_settings').get('training_path')
-        self.validation_path = configs.get('data_settings').get('validation_path')
-        self.evaluation_path = configs.get('data_settings').get('evaluation_path')
-        self.unlabelled_path = configs.get('data_settings').get('unlabelled_path')
-        self.fair_csv_filename = configs.get('data_settings').get('fair_csv_filename')
-        self.unfair_csv_filename = configs.get('data_settings').get('unfair_csv_filename')
-        self.query_strategies = configs.get('training_settings').get('query_strategies')
+
+        self.schema_file           = configs.get('dataset_settings').get('schema_file')
+        self.data_file             = configs.get('dataset_settings').get('data_file')
+        self.column_names_included = configs.get('dataset_settings').get('column_names_included')
+        self.index_column_included = configs.get('dataset_settings').get('index_column_included')
+        self.delimiter             = configs.get('dataset_settings').get('delimiter')
+
+        self.model_path          = configs.get('output_settings').get('model_path')
+        self.training_path       = configs.get('output_settings').get('training_path')
+        self.validation_path     = configs.get('output_settings').get('validation_path')
+        self.evaluation_path     = configs.get('output_settings').get('evaluation_path')
+        self.unlabelled_path     = configs.get('output_settings').get('unlabelled_path')
+        self.fair_csv_filename   = configs.get('output_settings').get('fair_csv_filename')
+        self.unfair_csv_filename = configs.get('output_settings').get('unfair_csv_filename')
+
+        self.query_strategies  = configs.get('training_settings').get('query_strategies')
         self.primary_logger_type = configs.get('log').get('primary_logger_type')
         self.log_level = configs.get('log').get('log_level')
 
+        assert isinstance(self.column_names_included, bool)
+        assert isinstance(self.index_column_included, bool)
         assert isinstance(self.query_strategies, list)

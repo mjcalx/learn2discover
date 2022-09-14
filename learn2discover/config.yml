@@ -4,8 +4,15 @@ sut_settings:
 training_settings:
   query_strategies: [entropy, least_confidence, margin_sampling]
 
-data_settings:
+dataset_settings:
   schema_file: data/german/schema.yml
+  data_file: data/german/german.csv
+  column_names_included: true
+  index_column_included: true
+  delimiter: ','
+
+output_settings:
+  model_path: models
   training_path: data/german/training_data
   validation_path: data/german/validation_data
   evaluation_path: data/german/evaluation_data

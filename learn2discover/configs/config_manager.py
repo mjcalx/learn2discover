@@ -54,7 +54,6 @@ class ConfigManager:
 
         self.schema_file           = configs.get('dataset_settings').get('schema_file')
         self.data_file             = configs.get('dataset_settings').get('data_file')
-        self.column_names_included = configs.get('dataset_settings').get('column_names_included')
         self.index_column_included = configs.get('dataset_settings').get('index_column_included')
         self.delimiter             = configs.get('dataset_settings').get('delimiter')
 

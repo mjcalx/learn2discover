@@ -24,7 +24,7 @@ class Learn2Discover:
     """
 
     def __init__(self):
-        self.config_manager = ConfigManager.create_instance('.')
+        self.config_manager = ConfigManager.create_instance(os.getcwd())
         self.config_manager.load_configs()
         LoggingUtils.get_instance().debug('Loaded Configurations.')
         try:
@@ -36,7 +36,8 @@ class Learn2Discover:
             
             self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
         except BaseException as e:
-            self.logger.error(f"{e} Exiting...")
+            self.logger.error(f'{e}')
+            self.logger.error('Exiting...')
             print(traceback.format_exc())
             exit()
     def run(self):

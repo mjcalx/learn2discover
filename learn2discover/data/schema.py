@@ -12,7 +12,29 @@ class Schema(OrderedDict):
         super(Schema, self).__init__(parsed_yaml)
         self.logger = LoggerFactory.get_logger(__class__.__name__) 
         self._validate()
+        
     
+    def get_type(self, key: str) -> str:
+        try:
+            return self[key][self.TYPE_STR]
+        except KeyError:
+            self.logger.error(f'KeyError: "{key}" for schema when retrieving type')
+            raise
+
+    def get_variable_values(self, key: str) -> tuple:
+        """
+        Values are strings if categorical; otherwise returns an empty tuple
+        """
+        try:
+            if self.get_type(key) == self.CATEGORICAL_STR:
+                return tuple(self[key][self.VALUES_STR])
+            if self.get_type(key) == self.NUMERICAL_STR:
+                return ()
+            raise ValueError
+        except KeyError:
+            self.logger.error(f'KeyError: "{key}" for schema when retrieving variable values')
+            raise
+
     def _validate(self):
         """Check that categorical values are defined"""
         try:

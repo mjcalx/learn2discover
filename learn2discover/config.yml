@@ -5,8 +5,8 @@ training_settings:
   query_strategies: [entropy, least_confidence, margin_sampling]
 
 dataset_settings:
-  schema_file: data/german/schema.yml
-  data_file: data/german/german.csv
+  schema_file: data/schema_german.yml
+  data_file: data/german.csv
   index_column_included: true
   delimiter: ','
 

@@ -7,6 +7,11 @@ class Schema(OrderedDict):
     CATEGORICAL_STR = 'categorical'
     NUMERICAL_STR   = 'numerical'
     VALUES_STR      = 'values'
+    ERR_MISSING_VALUES_KEY    = 'MissingValuesKey'
+    ERR_NON_UNIQUE_VALUES     = 'NonUniqueValues'
+    ERR_EMPTY_VALUES_DICT     = 'EmptyValuesDict'
+    ERR_BAD_VARIABLE_TYPE     = 'BadVariableType'
+    ERR_MULTIPLE_OR_NO_LABELS = 'MultipleOrNoLabels'
 
     def __init__(self, parsed_yaml: dict):
         super(Schema, self).__init__(parsed_yaml)
@@ -36,31 +41,42 @@ class Schema(OrderedDict):
             raise
 
     def _validate(self):
-        """Check that categorical values are defined"""
+        """Check that data meets constraints/is valid"""
+
         try:
+            # Check that :
+            #   - categorical values are defined
+            #   - categorical values are unique
             for k in self.keys():
-                var = self[k]
-                var_type = var[self.TYPE_STR]
+                var_type = self.get_type(k)
                 if var_type == self.CATEGORICAL_STR:
-                    assert self.VALUES_STR in self[k].keys(), 'MissingValuesKey'
-                    assert isinstance(self[k][self.VALUES_STR], dict) and \
-                            len(self[k][self.VALUES_STR]) > 0, 'EmptyValuesDict'
+                    if self.VALUES_STR not in self[k].keys():
+                        raise KeyError(self.ERR_MISSING_VALUES_KEY)
+                    values_dict = self[k][self.VALUES_STR]
+                    if not isinstance(values_dict, dict) or not len(values_dict) > 0:
+                        raise KeyError(self.ERR_EMPTY_VALUES_DICT)
+                    if len(set(values_dict.values())) != len(values_dict):
+                        raise ValueError(self.ERR_NON_UNIQUE_VALUES)
                 elif var_type == self.NUMERICAL_STR:
                     pass
                 else:
-                    raise ValueError
-            return
-        except ValueError:
-            self.logger.error(
-                f'ValueError: Type of variable must be "{self.NUMERICAL_STR}"'
-                f' or "{self.CATEGORICAL_STR}". Received "{var_type}"')
+                    raise ValueError(self.ERR_BAD_VARIABLE_TYPE)
+        except ValueError as e:
+            msg = ''
+            if str(e) == self.ERR_BAD_VARIABLE_TYPE:
+                msg = ': type of variable must be "{0}" or "{1}". Received "{2}"'.format(
+                        self.NUMERICAL_STR, self.CATEGORICAL_STR, var_type)
+            if str(e) == self.ERR_NON_UNIQUE_VALUES:
+                msg = ': data values must be unique'
+            self.logger.error(f'{e} {msg}')
             raise
-        except AssertionError as a:
-            self.logger.error(f"AssertionError ({a}): categorical variables must "
-                               "have non-empty list of valid values")
+        except KeyError as e:
+            self.logger.error(f'{e} : categorical variables must have non-empty dict of unique values')
+            raise
             raise
 
-    def get_description(self, variable_name: str):
+
+    def get_description(self, variable_name: str) -> str:
         """Return description, if given in the schema. Else return the variable name."""
         try:
             if self.DESCRIPTION_STR in self[variable_name].keys():

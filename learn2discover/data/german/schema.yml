@@ -131,12 +131,14 @@ telephone:
 
 is_foreign_worker: 
   type : categorical
+  is_label: False
   values:
     A201 : "yes"
     A202 : "no"
 
 credit_label:
   type : categorical
+  is_label: True
   values:
     1 : "Good"
     2 : "Bad"

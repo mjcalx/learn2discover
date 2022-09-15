@@ -7,6 +7,8 @@ class Schema(OrderedDict):
     CATEGORICAL_STR = 'categorical'
     NUMERICAL_STR   = 'numerical'
     VALUES_STR      = 'values'
+    IS_LABEL_STR    = 'is_label'
+
     ERR_MISSING_VALUES_KEY    = 'MissingValuesKey'
     ERR_NON_UNIQUE_VALUES     = 'NonUniqueValues'
     ERR_EMPTY_VALUES_DICT     = 'EmptyValuesDict'
@@ -16,6 +18,7 @@ class Schema(OrderedDict):
     def __init__(self, parsed_yaml: dict):
         super(Schema, self).__init__(parsed_yaml)
         self.logger = LoggerFactory.get_logger(__class__.__name__) 
+        self.label_key = None
         self._validate()
         
     
@@ -40,6 +43,10 @@ class Schema(OrderedDict):
             self.logger.error(f'KeyError: "{key}" for schema when retrieving variable values')
             raise
 
+    def get_label_key(self) -> str:
+        assert self.label_key is not None
+        return self.label_key
+
     def _validate(self):
         """Check that data meets constraints/is valid"""
 
@@ -61,6 +68,10 @@ class Schema(OrderedDict):
                     pass
                 else:
                     raise ValueError(self.ERR_BAD_VARIABLE_TYPE)
+            # Check that there exists exactly one variable that acts as a label
+            labels = [key for key in self.keys() if self.IS_LABEL_STR in self[key] and self[key][self.IS_LABEL_STR]]
+            assert len(labels) == 1, self.ERR_MULTIPLE_OR_NO_LABELS
+            self.label_key = labels[0]
         except ValueError as e:
             msg = ''
             if str(e) == self.ERR_BAD_VARIABLE_TYPE:
@@ -73,6 +84,8 @@ class Schema(OrderedDict):
         except KeyError as e:
             self.logger.error(f'{e} : categorical variables must have non-empty dict of unique values')
             raise
+        except AssertionError as e:
+            self.logger.error(f"{e} : Must have exactly one label variable")
             raise
 
 

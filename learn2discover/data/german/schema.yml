@@ -107,7 +107,7 @@ housing:
     A152 : "own"
     A153 : "for free"
 
-existing_credits_at_this_bank 16: 
+existing_credits_at_this_bank: 
   type : numerical
   description: "Number of existing credits at this bank"
 

@@ -17,15 +17,22 @@ def _headers_are_valid(headers: List[str], input_attributes: List[str], output_a
     return True
 
 
-def _parse_instances(row_data: List[List[str]], input_count: int) -> List[DataInstance]:
+def _parse_instances(row_data: List[List[str]], attributes: DataAttributes) -> List[DataInstance]:
     """
     Parses raw row data to a list of DataInstances
     """
+    input_count = len(attributes.inputs)
+    output_count = len(attributes.outputs)
     instances: List[DataInstance] = []
 
-    for i in range(len(row_data)):
-        inputs = row_data[i][:input_count]
-        outputs = row_data[i][input_count:]
+    for row in row_data:
+        inputs = {}
+        outputs = {}
+        for i in range(input_count):
+            inputs[attributes.inputs[i]] = row[i]
+
+        for i in range(input_count, input_count + output_count):
+            outputs[attributes.outputs[i - input_count]] = row[i]
 
         instances.append(DataInstance(inputs, outputs))
 
@@ -63,6 +70,6 @@ def parse_data(filepath: str, input_attributes: List[str], output_attributes: Li
                                                        f" {output_attributes}"
 
     attributes = DataAttributes(input_attributes, output_attributes)
-    instances = _parse_instances(rows, len(attributes.inputs))
+    instances = _parse_instances(rows, attributes)
 
     return FileData(attributes, instances)

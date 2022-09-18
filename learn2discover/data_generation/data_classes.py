@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class DataAttributes:
@@ -36,6 +36,14 @@ class Label(Enum):
     UNFAIR = False
 
 
+class Outcome(Enum):
+    """
+    A binary outcome with values "Pass" and "Fail"
+    """
+    PASS = True
+    FAIL = False
+
+
 class DataInstance:
     """
     A class for a single data instance. Should contain:
@@ -44,10 +52,12 @@ class DataInstance:
         - Fairness label
     """
 
-    def __init__(self, inputs: List[str], outputs: List[str], label: Optional[Label] = None):
+    def __init__(self, inputs: Dict[str, str], outputs: Dict[str, str], label: Optional[Label] = None,
+                 outcome: Optional[Outcome] = None):
         self._inputs = inputs
         self._outputs = outputs
         self._label: Label = label
+        self._outcome: Outcome = outcome
 
     @property
     def label(self):
@@ -56,6 +66,14 @@ class DataInstance:
     @label.setter
     def label(self, label: Label):
         self._label = label
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    @outcome.setter
+    def outcome(self, outcome: Outcome):
+        self._outcome = outcome
 
     @property
     def inputs(self):
@@ -98,22 +116,3 @@ class FileData:
     @instances.setter
     def instances(self, instances: List[DataInstance]):
         self._instances = instances
-
-
-def _test_class():
-    """
-    Basic tests for data class initializing
-    """
-    attributes = DataAttributes(["attribute 1"], ["attribute 2"])
-    data = DataInstance(["input 1"], ["output 1"])
-    data.label = Label.FAIR
-
-    print(f"{attributes.inputs}, {attributes.outputs}")
-    if type(data.label) is Label:
-        print(f"{data.inputs}, {data.outputs}, {data.label.name}/{data.label.value}")
-    else:
-        print(f"{data.inputs}, {data.outputs}, {data.label}")
-
-
-if __name__ == "__main__":
-    _test_class()

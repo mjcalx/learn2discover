@@ -1,4 +1,3 @@
-import csv
 from enum import Enum
 from typing import List, Optional
 
@@ -75,46 +74,46 @@ class DataInstance:
         self._outputs = outputs
 
 
-def test_csv():
+class FileData:
     """
-    Basic tests for csv file reading
+    A class for storing a full file's data
     """
-    filepath = "../../datasets/original/COMPAS/compas-scores-raw.csv"
 
-    headers = []
-    rows = []
+    def __init__(self, attributes: DataAttributes, instances: List[DataInstance]):
+        self._attributes = attributes
+        self._instances = instances
 
-    with open(filepath, 'r') as csv_file:
-        csv_reader = csv.reader(csv_file)
+    @property
+    def attributes(self):
+        return self._attributes
 
-        headers = next(csv_reader)
+    @attributes.setter
+    def attributes(self, attributes: DataAttributes):
+        self._attributes = attributes
 
-        for row in csv_reader:
-            rows.append(row)
+    @property
+    def instances(self):
+        return self._instances
 
-    print("Header names are:")
-    for header in headers:
-        print(f"\t{header}")
-
-    print("First 5 rows are:")
-    for row in rows[:5]:
-        print(row)
-        # for col in row:
-        #     print("%10s"%col, end=" "),
-        print("\n")
+    @instances.setter
+    def instances(self, instances: List[DataInstance]):
+        self._instances = instances
 
 
-def test_class():
+def _test_class():
     """
     Basic tests for data class initializing
     """
     attributes = DataAttributes(["attribute 1"], ["attribute 2"])
     data = DataInstance(["input 1"], ["output 1"])
     data.label = Label.FAIR
+
     print(f"{attributes.inputs}, {attributes.outputs}")
-    print(f"{data.inputs}, {data.outputs}, {data.label}")
+    if type(data.label) is Label:
+        print(f"{data.inputs}, {data.outputs}, {data.label.name}/{data.label.value}")
+    else:
+        print(f"{data.inputs}, {data.outputs}, {data.label}")
 
 
 if __name__ == "__main__":
-    # test_csv()
-    test_class()
+    _test_class()

@@ -1,9 +1,8 @@
 import numpy as np
 from data.schema import Schema
+from data.loader import Loader
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
-import os
-import pandas as pd
 # ! WIP
 class DatasetManager:
     def __init__(self, random_state: int=42):
@@ -11,44 +10,10 @@ class DatasetManager:
         Args:
             random_state (int, optional): random seed. Defaults to 42.
         """
-        self.random = np.random.RandomState(random_state)
-        
         self.logger = LoggerFactory.get_logger(__class__.__name__)
-        self.load_data()
-
-    def load_data(self, skip_already_labelled=False):
-        try:
-            self.logger.debug("Loading schema...")
-            cfgmgr = ConfigManager.get_instance()
-            schema = Schema(cfgmgr.get_data_schema())
-            self.logger.debug("Loading dataset...")
-            # TODO
-            # If training set, validation set, and eval set already exist...
-            #     don't load the dataset, it's already been processed
-            #     MAYBE perform per-entry check, for consistency.
-            data_file = os.path.join(cfgmgr.workspace_dir, cfgmgr.data_file)
-
-            if not os.path.exists(data_file):
-                raise FileNotFoundError
-
-            with open(data_file, 'r') as d:
-                index_column_included = False if not cfgmgr.index_column_included else 0
-                data = pd.read_csv(d, sep=cfgmgr.delimiter, 
-                                    index_col=index_column_included, 
-                                    header=0, names=schema.keys())  # always use names from schema
-
-            # Validity checks
-            for i in range(len(data.columns)):
-                cname = data.columns[i]
-                # Check that the schema size corresponds to the number of variables
-                assert len(schema.keys()) == len(data.columns)
-                # Check that all values in the categorical data are represented in the schema
-                if schema.get_type(cname) == schema.CATEGORICAL_STR:
-                    unique_categories = set(data.iloc[:,i])
-                    schema_categories = set(schema.get_variable_values(cname))
-                    assert unique_categories.issubset(schema_categories)
-
-            return 
-        except FileNotFoundError as a:
-            self.logger.error(f"FileNotFoundError: File {data_file} not found")
-            raise
+        self.random = np.random.RandomState(random_state)
+        self.schema = None
+        self.loader = Loader()
+        self.data   = self.loader.load_data()
+        self.already_labelled = {}  # tracking what is already labelled
+        self.feature_idex = {} # feature mapping for one-hot encoding

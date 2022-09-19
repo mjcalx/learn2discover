@@ -22,7 +22,10 @@ class ConfigManager:
     log_level = 'info'
 
     def __init__(self, workspace_dir):
+        if ConfigManager.instance is None:
+            ConfigManager.instance = self
         self.workspace_dir = workspace_dir
+        self.load_configs()
 
     def get_yaml_configs(self, config_file=None):
         cfg = config_file if config_file is not None else self.config_file
@@ -33,14 +36,8 @@ class ConfigManager:
         if ConfigManager.instance is not None:
             return ConfigManager.instance
         else:
-            print('ERROR: Can\'t find ConfigManager instance')
-
-    @staticmethod
-    def create_instance(workspace_dir):
-        if ConfigManager.instance is None:
-            ConfigManager.instance = ConfigManager(workspace_dir)
-
-        return ConfigManager.instance
+            print('ERROR: Can\'t find ConfigManager instance. Please '\
+                  'instantiate a ConfigManager + configs before calling get_instance()')
 
     def get_data_schema(self, schema_file=None):
         schf = schema_file if schema_file is not None else self.schema_file
@@ -48,7 +45,6 @@ class ConfigManager:
 
     def load_configs(self):
         configs = self.get_yaml_configs()
-
         self.schema_file           = configs.get('dataset_settings').get('schema_file')
         self.data_file             = configs.get('dataset_settings').get('data_file')
         self.index_column_included = configs.get('dataset_settings').get('index_column_included')

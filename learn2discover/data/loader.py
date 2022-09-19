@@ -4,21 +4,11 @@ from data.schema import Schema
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 
-
 class Loader:
     def __init__(self):
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.config_manager = ConfigManager.get_instance()
         self.data_path = os.path.join(self.config_manager.workspace_dir, self.config_manager.data_file)
-
-    @staticmethod
-    def get_yaml_configs(workspace_dir=os.getcwd(), config_file=None):
-        yaml_path = os.path.join(workspace_dir), config_file
-        configs = {}
-        if os.path.exists(yaml_path):
-            stream = open(yaml_path, "r")
-            configs = yaml.full_load(stream)
-        return configs
 
     def load_data(self) -> (Schema, pd.DataFrame):
         try:
@@ -54,11 +44,12 @@ class Loader:
                 assert unique_categories.issubset(schema_categories)
 
     def _read_csv_file(self, schema: Schema) -> pd.DataFrame: 
-        if not os.path.exists(self.data_file):
+        if not os.path.exists(self.data_path):
             raise FileNotFoundError
 
-        with open(data_file, 'r') as d:
+        with open(self.data_path, 'r') as d:
             index_column_included = False if not self.config_manager.index_column_included else 0
             data = pd.read_csv(d, sep=self.config_manager.delimiter, 
                                 index_col=index_column_included, 
                                 header=0, names=schema.keys())  # always use names from schema
+        return data

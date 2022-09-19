@@ -1,6 +1,6 @@
 import os
 import yaml
-from data.loader import Loader
+from utils.loader_utils import LoaderUtils
 
 
 class ConfigManager:
@@ -26,7 +26,7 @@ class ConfigManager:
 
     def get_yaml_configs(self, config_file=None):
         cfg = config_file if config_file is not None else self.config_file
-        return Loader.get_yaml_configs(self.workspace_dir, cfg)
+        return LoaderUtils.get_yaml_configs(self.workspace_dir, cfg)
 
     @staticmethod
     def get_instance():

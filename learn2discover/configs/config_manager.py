@@ -1,5 +1,6 @@
 import os
 import yaml
+from data.loader import Loader
 
 
 class ConfigManager:
@@ -25,12 +26,7 @@ class ConfigManager:
 
     def get_yaml_configs(self, config_file=None):
         cfg = config_file if config_file is not None else self.config_file
-        yaml_path = os.path.join(self.workspace_dir, cfg)
-        configs = {}
-        if os.path.exists(yaml_path):
-            stream = open(yaml_path, "r")
-            configs = yaml.full_load(stream)
-        return configs
+        return Loader.get_yaml_configs(self.workspace_dir, cfg)
 
     @staticmethod
     def get_instance():
@@ -46,8 +42,9 @@ class ConfigManager:
 
         return ConfigManager.instance
 
-    def get_data_schema(self):
-        return self.get_yaml_configs(self.schema_file)
+    def get_data_schema(self, schema_file=None):
+        schf = schema_file if schema_file is not None else self.schema_file
+        return self.get_yaml_configs(schf)
 
     def load_configs(self):
         configs = self.get_yaml_configs()

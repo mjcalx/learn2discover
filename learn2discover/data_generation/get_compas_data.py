@@ -1,7 +1,18 @@
 from typing import List
+import sys
+import os
+L2D_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ROOT_PATH = os.path.dirname(L2D_PATH)
+
+try:
+    sys.path.index(ROOT_PATH)
+    sys.path.index(L2D_PATH)
+except ValueError:
+    sys.path.append(ROOT_PATH)
+    sys.path.append(L2D_PATH)
 
 from data_classes import FileData, DataInstance, Outcome
-from data_utils import set_labels
+from utils.data_utils import set_labels
 from read_data import parse_data
 
 INPUT_ATTRIBUTES = ['Person_ID', 'AssessmentID', 'Case_ID', 'Agency_Text', 'LastName', 'FirstName', 'MiddleName',
@@ -47,7 +58,7 @@ if __name__ == "__main__":
     A simple test example to show that everything is working
     """
 
-    testpath = "../../datasets/original/COMPAS/compas-scores-raw.csv"
+    testpath = os.path.join(ROOT_PATH, "datasets", "original", "COMPAS", "compas-scores-raw.csv")
     sample_sensitive_attributes = ["Sex_Code_Text", "Ethnic_Code_Text"]
 
     # Get the labelled data

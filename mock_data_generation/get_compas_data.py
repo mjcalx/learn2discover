@@ -1,6 +1,6 @@
 from typing import List
 
-from data_classes import FileData, DataInstance, Outcome
+from data.data_classes import FileData, DataInstance, Outcome
 from mock_oracle import set_labels
 from read_data import parse_data
 

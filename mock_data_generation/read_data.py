@@ -1,7 +1,7 @@
 import csv
 from typing import List
 
-from data_classes import DataAttributes, DataInstance, FileData
+from data.data_classes import DataAttributes, DataInstance, FileData
 
 
 def _headers_are_valid(headers: List[str], input_attributes: List[str], output_attributes: List[str]) -> bool:

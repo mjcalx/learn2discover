@@ -17,15 +17,13 @@ def main():
     learn_to_discover = Learn2Discover()
     learn_to_discover.run()
 
-
 class Learn2Discover:
     """
     Learn2Discover
     """
 
-    def __init__(self):
-        self.config_manager = ConfigManager.create_instance(os.getcwd())
-        self.config_manager.load_configs()
+    def __init__(self, workspace_dir=os.getcwd()):
+        self.config_manager = ConfigManager(workspace_dir)
         LoggingUtils.get_instance().debug('Loaded Configurations.')
         try:
             self.logger = LoggerFactory.get_logger(__class__.__name__)

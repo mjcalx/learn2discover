@@ -17,7 +17,6 @@ from data.data_classes import DataAttributes, FileData, DataInstance, Outcome, L
 from oracle.dataset_manager import DatasetManager
 from collections import OrderedDict
 from mock_oracle import set_labels
-from read_data import parse_data
 
 def _read_compas_data(filepath: str) -> FileData:
     """
@@ -31,11 +30,6 @@ def _determine_compas_outcomes(outputs: pd.DataFrame):
     """
     assign_outcome = lambda x : Outcome.FAIL if str(x["ScoreText"]) in ["High", "Medium", "nan"] else Outcome.PASS
     return outputs.apply(assign_outcome, axis=1)
-
-
-
-    
-
 
 if __name__ == "__main__":
     """

@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from data_classes import DataInstance, FileData, Label
+from data.data_classes import DataInstance, FileData, Label
 
 
 def _compute_group_fairness(sensitive_attribute: str, instances: List[DataInstance]):

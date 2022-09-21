@@ -5,8 +5,6 @@ from enum import Enum
 class Schema(OrderedDict):
     """
     This class is intended for future use with human-readable prompts for Human-in-the-Loop systems.
-    
-    This class is not relevant to Learn2Discover v1.0 and is used here only for data validation purposes
     """
     DESCRIPTION_STR = 'description'
     TYPE_STR        = 'type'

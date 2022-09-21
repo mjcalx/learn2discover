@@ -1,17 +1,21 @@
 from loggers.logger_factory import LoggerFactory
 from collections import OrderedDict
+from enum import Enum
 
 class Schema(OrderedDict):
+    """
+    This class is intended for future use with human-readable prompts for Human-in-the-Loop systems.
+    
+    This class is not relevant to Learn2Discover v1.0 and is used here only for data validation purposes
+    """
     DESCRIPTION_STR = 'description'
     TYPE_STR        = 'type'
-    CATEGORICAL_STR = 'categorical'
-    NUMERICAL_STR   = 'numerical'
     VALUES_STR      = 'values'
     IS_LABEL_STR    = 'is_label'
 
     ERR_MISSING_VALUES_KEY    = 'MissingValuesKey'
     ERR_NON_UNIQUE_VALUES     = 'NonUniqueValues'
-    ERR_EMPTY_VALUES_DICT     = 'EmptyValuesDict'
+    ERR_EMPTY_VALUES          = 'EmptyValues'
     ERR_BAD_VARIABLE_TYPE     = 'BadVariableType'
     ERR_MULTIPLE_OR_NO_LABELS = 'MultipleOrNoLabels'
 
@@ -34,9 +38,9 @@ class Schema(OrderedDict):
         Values are strings if categorical; otherwise returns an empty tuple
         """
         try:
-            if self.get_type(key) == self.CATEGORICAL_STR:
-                return tuple(self[key][self.VALUES_STR])
-            if self.get_type(key) == self.NUMERICAL_STR:
+            if self.get_type(key) == VarType.CATEGORICAL:
+                return tuple(map(lambda x : str(x), self[key][self.VALUES_STR]))
+            if self.get_type(key) in [i.value for i in list(VarType)]:
                 return ()
             raise ValueError
         except KeyError:
@@ -49,34 +53,21 @@ class Schema(OrderedDict):
 
     def _validate(self):
         """Check that data meets constraints/is valid"""
-
         try:
-            # Check that :
-            #   - categorical values are defined
-            #   - categorical values are unique
+            # Validity Checks
             for k in self.keys():
                 var_type = self.get_type(k)
-                if var_type == self.CATEGORICAL_STR:
-                    if self.VALUES_STR not in self[k].keys():
-                        raise KeyError(self.ERR_MISSING_VALUES_KEY)
-                    values_dict = self[k][self.VALUES_STR]
-                    if not isinstance(values_dict, dict) or not len(values_dict) > 0:
-                        raise KeyError(self.ERR_EMPTY_VALUES_DICT)
-                    if len(set(values_dict.values())) != len(values_dict):
-                        raise ValueError(self.ERR_NON_UNIQUE_VALUES)
-                elif var_type == self.NUMERICAL_STR:
-                    pass
-                else:
+                # Check categorical values are defined and unique
+                if var_type == VarType.CATEGORICAL.value:
+                    self._validate_categories(k)
+                # Check variable type is valid
+                elif var_type not in VarType.values():
                     raise ValueError(self.ERR_BAD_VARIABLE_TYPE)
-            # Check that there exists exactly one variable that acts as a label
-            labels = [key for key in self.keys() if self.IS_LABEL_STR in self[key] and self[key][self.IS_LABEL_STR]]
-            assert len(labels) == 1, self.ERR_MULTIPLE_OR_NO_LABELS
-            self.label_key = labels[0]
         except ValueError as e:
             msg = ''
             if str(e) == self.ERR_BAD_VARIABLE_TYPE:
-                msg = ': type of variable must be "{0}" or "{1}". Received "{2}"'.format(
-                        self.NUMERICAL_STR, self.CATEGORICAL_STR, var_type)
+                msg = ': type of variable must be in {0}. Received "{1}"'.format(
+                        [i.value for i in list(VarType)], var_type)
             if str(e) == self.ERR_NON_UNIQUE_VALUES:
                 msg = ': data values must be unique'
             self.logger.error(f'{e} {msg}')
@@ -84,10 +75,18 @@ class Schema(OrderedDict):
         except KeyError as e:
             self.logger.error(f'{e} : categorical variables must have non-empty dict of unique values')
             raise
-        except AssertionError as e:
-            self.logger.error(f"{e} : Must have exactly one label variable")
-            raise
 
+    def _validate_categories(self, key):
+        if self.VALUES_STR not in self[key].keys():
+            raise KeyError(self.ERR_MISSING_VALUES_KEY)
+        values_read = self[key][self.VALUES_STR]
+        if not (isinstance(values_read, dict) or isinstance(values_read, list)) or \
+           not len(values_read) > 0:
+            raise KeyError(self.ERR_EMPTY_VALUES)
+        len_unique_values = (lambda x : len(set(x)) if isinstance(x, list) else len(set(x.values())))(values_read)
+        if len_unique_values != len(values_read):
+            raise ValueError(self.ERR_NON_UNIQUE_VALUES)
+                
 
     def get_description(self, variable_name: str) -> str:
         """Return description, if given in the schema. Else return the variable name."""
@@ -97,3 +96,20 @@ class Schema(OrderedDict):
             return variable_name
         except KeyError:
             self.logger.error(f"KeyError: {variable_name}")
+
+class VarType(Enum):
+    CATEGORICAL = 'categorical'
+    NUMERICAL   = 'numerical'
+    DATE        = 'date'
+    ID          = 'id'
+
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value == other.value
+        if other.__class__ is str:
+            return self.value == other
+        return NotImplemented
+    
+    @staticmethod
+    def values():
+        return [VarType[v].value for v in VarType.__members__]

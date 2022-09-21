@@ -1,7 +1,8 @@
 import csv
-from typing import List
+from typing import List, Callable
 
-from data_classes import DataAttributes, DataInstance, FileData
+from data_classes import DataAttributes, DataInstance, FileData, TestOutcome
+from mock_data_generation.mock_oracle import set_mock_labels
 
 
 def _headers_are_valid(headers: List[str], input_attributes: List[str], output_attributes: List[str]) -> bool:
@@ -39,7 +40,7 @@ def _parse_instances(row_data: List[List[str]], attributes: DataAttributes) -> L
     return instances
 
 
-def parse_data(filepath: str, input_attributes: List[str], output_attributes: List[str]) -> FileData:
+def _parse_data(filepath: str, input_attributes: List[str], output_attributes: List[str]) -> FileData:
     """Reads a csv data file and parses it into relevant data types for model to use.
 
     Parameters:
@@ -73,3 +74,35 @@ def parse_data(filepath: str, input_attributes: List[str], output_attributes: Li
     instances = _parse_instances(rows, attributes)
 
     return FileData(attributes, instances)
+
+
+def get_mock_data(filepath: str, input_attributes: List[str], output_attributes: List[str],
+                  sensitive_attributes: List[str], outcome_func: Callable[[DataInstance], TestOutcome]) -> FileData:
+    """Generates mocked fairness labels for a specified raw dataset.
+
+    Parameters:
+        filepath (str): Path to the file to read
+
+        input_attributes (List[str]): A list of expected SUT input attributes that the file should contain
+
+        output_attributes (List[str]): A list of expected SUT output attributes that the file should contain
+
+        sensitive_attributes (List[str]): A list of attributes from the input_attributes to consider as "sensitive",
+            i.e. contributing to a decision on fairness
+
+        outcome_func (Callable[[DataInstance], TestOutcome]): A function unique to the specified dataset that
+            determines whether a given data instance from the dataset passes or fails some goal or objective,
+            e.g. to receive a loan or not receive a loan
+
+    Returns:
+        A FileData object with all data instances containing a fairness label
+    """
+    # Get the unlabelled data from the raw csv data file
+    unlabelled_data = _parse_data(filepath, input_attributes, output_attributes)
+
+    # Determine the "test outcome" for each data instance
+    for instance in unlabelled_data.instances:
+        instance.outcome = outcome_func(instance)
+
+    # Apply mocked fairness labels to each data instance
+    return set_mock_labels(unlabelled_data, sensitive_attributes)

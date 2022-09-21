@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from data_classes import DataInstance, FileData, Label
+from data_classes import DataInstance, FileData, FairnessLabel
 
 
 def _compute_group_fairness(sensitive_attribute: str, instances: List[DataInstance]):
@@ -56,15 +56,12 @@ def _normalize_group_fairness_score(group_fairness: Dict[str, Dict[str, float]])
     return normalized_fairness
 
 
-def set_labels(file_data: FileData, sensitive_attributes: List[str]) -> FileData:
+def set_mock_labels(file_data: FileData, sensitive_attributes: List[str]) -> FileData:
     data_instances = file_data.instances
     group_fairness = {}
 
     for attribute in sensitive_attributes:
         group_fairness[attribute] = _compute_group_fairness(attribute, data_instances)
-        print(group_fairness[attribute])
-
-
 
     normalized_fairness = _normalize_group_fairness_score(group_fairness)
 
@@ -75,8 +72,8 @@ def set_labels(file_data: FileData, sensitive_attributes: List[str]) -> FileData
             fairness_score += normalized_fairness[attribute][instance_value]
 
         if fairness_score >= 0:
-            instance.label = Label.FAIR
+            instance.label = FairnessLabel.FAIR
         else:
-            instance.label = Label.UNFAIR
+            instance.label = FairnessLabel.UNFAIR
 
     return file_data

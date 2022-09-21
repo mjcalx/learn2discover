@@ -28,7 +28,7 @@ class DataAttributes:
         self._outputs = outputs
 
 
-class Label(Enum):
+class FairnessLabel(Enum):
     """
     A binary label with values "Fair" and "Unfair"
     """
@@ -36,7 +36,7 @@ class Label(Enum):
     UNFAIR = False
 
 
-class Outcome(Enum):
+class TestOutcome(Enum):
     """
     A binary outcome with values "Pass" and "Fail"
     """
@@ -52,19 +52,19 @@ class DataInstance:
         - Fairness label
     """
 
-    def __init__(self, inputs: Dict[str, str], outputs: Dict[str, str], label: Optional[Label] = None,
-                 outcome: Optional[Outcome] = None):
+    def __init__(self, inputs: Dict[str, str], outputs: Dict[str, str], label: Optional[FairnessLabel] = None,
+                 outcome: Optional[TestOutcome] = None):
         self._inputs = inputs
         self._outputs = outputs
-        self._label: Label = label
-        self._outcome: Outcome = outcome
+        self._label: FairnessLabel = label
+        self._outcome: TestOutcome = outcome
 
     @property
     def label(self):
         return self._label
 
     @label.setter
-    def label(self, label: Label):
+    def label(self, label: FairnessLabel):
         self._label = label
 
     @property
@@ -72,7 +72,7 @@ class DataInstance:
         return self._outcome
 
     @outcome.setter
-    def outcome(self, outcome: Outcome):
+    def outcome(self, outcome: TestOutcome):
         self._outcome = outcome
 
     @property

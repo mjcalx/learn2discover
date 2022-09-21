@@ -8,6 +8,7 @@ class Loader:
     def __init__(self):
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.config_manager = ConfigManager.get_instance()
+        self.workspace_dir = self.config_manager.workspace_dir
         self.data_path = os.path.join(self.config_manager.workspace_dir, self.config_manager.data_file)
 
     def load_data(self) -> (Schema, pd.DataFrame):
@@ -28,7 +29,7 @@ class Loader:
 
             return schema, data
         except FileNotFoundError as a:
-            self.logger.error(f"FileNotFoundError: File {data_file} not found")
+            self.logger.error(f"FileNotFoundError: File {self.data_path} not found")
             raise
     
     def _validity_checks(self, schema: Schema, data: pd.DataFrame) -> bool:

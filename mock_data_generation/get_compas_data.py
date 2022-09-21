@@ -1,6 +1,15 @@
+import os
+import sys
 from typing import List
 
-from data.data_classes import FileData, DataInstance, Outcome
+root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)) )
+l2d_path = os.path.join(root_path, 'learn2discover')
+try:
+    sys.path.index(l2d_path)
+except ValueError:
+    sys.path.append(l2d_path)
+
+from data.data_classes import DataAttributes, FileData, DataInstance, Outcome
 from mock_oracle import set_labels
 from read_data import parse_data
 

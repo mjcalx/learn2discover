@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Dict
-
+from pandas import Series
 
 class DataAttributes:
     """
@@ -90,29 +90,3 @@ class DataInstance:
     @outputs.setter
     def outputs(self, outputs: List[str]):
         self._outputs = outputs
-
-
-class FileData:
-    """
-    A class for storing a full file's data
-    """
-
-    def __init__(self, attributes: DataAttributes, instances: List[DataInstance]):
-        self._attributes = attributes
-        self._instances = instances
-
-    @property
-    def attributes(self):
-        return self._attributes
-
-    @attributes.setter
-    def attributes(self, attributes: DataAttributes):
-        self._attributes = attributes
-
-    @property
-    def instances(self):
-        return self._instances
-
-    @instances.setter
-    def instances(self, instances: List[DataInstance]):
-        self._instances = instances

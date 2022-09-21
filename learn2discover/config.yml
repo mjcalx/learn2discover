@@ -5,9 +5,9 @@ training_settings:
   query_strategies: [entropy, least_confidence, margin_sampling]
 
 dataset_settings:
-  schema_file: data/schema_german.yml
-  data_file: data/german.csv
-  index_column_included: true
+  schema_file: data/schema_compas.yml
+  data_file: ../datasets/original/COMPAS/compas-scores-raw.csv
+  index_column_included: false
   delimiter: ','
 
 output_settings:

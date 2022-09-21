@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from data.data_classes import DataAttributes
 from data.schema import Schema, VarType
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
@@ -53,3 +54,4 @@ class Loader:
                                 index_col=index_column_included, 
                                 header=0, names=schema.keys())  # always use names from schema
         return data
+

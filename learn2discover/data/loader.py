@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from data.schema import Schema
+from data.schema import Schema, VarType
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 
@@ -38,15 +38,14 @@ class Loader:
             # Check that the schema size corresponds to the number of variables
             assert len(schema.keys()) == len(data.columns)
             # Check that all values in the categorical data are represented in the schema
-            if schema.get_type(cname) == schema.CATEGORICAL_STR:
-                unique_categories = set(data.iloc[:,i])
+            if schema.get_type(cname) == VarType.CATEGORICAL:
+                unique_categories = set(data.iloc[:,i].astype(str))
                 schema_categories = set(schema.get_variable_values(cname))
-                assert unique_categories.issubset(schema_categories)
+                assert unique_categories.issubset(schema_categories), str(unique_categories) + str(schema_categories)
 
     def _read_csv_file(self, schema: Schema) -> pd.DataFrame: 
         if not os.path.exists(self.data_path):
             raise FileNotFoundError
-
         with open(self.data_path, 'r') as d:
             index_column_included = False if not self.config_manager.index_column_included else 0
             data = pd.read_csv(d, sep=self.config_manager.delimiter, 

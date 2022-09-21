@@ -1,0 +1,102 @@
+Person_ID:
+  type: id
+
+AssessmentID:
+  type: id
+
+Case_ID:
+  type: id
+
+Agency_Text :
+  type : categorical
+  values :  ['Broward County', 'Probation', 'PRETRIAL', 'DRRD']
+
+LastName:
+  type: id
+
+FirstName:
+  type: id
+
+MiddleName:
+  type: id
+
+Sex_Code_Text :
+  type : categorical
+  values :  ['Male', 'Female']
+
+Ethnic_Code_Text :
+  type : categorical
+  values :  ['Caucasian', 'Native American', 'Oriental', 'Other', 'African-American', 'Asian', 'African-Am', 'Hispanic', 'Arabic']
+
+DateOfBirth:
+  type: date
+
+ScaleSet_ID :
+  type : categorical
+  values :  [17, 22]
+
+ScaleSet :
+  type : categorical
+  values :  ['Risk and Prescreen', 'All Scales']
+
+AssessmentReason :
+  type : categorical
+  values :  ['Intake']
+
+Language :
+  type : categorical
+  values :  ['Spanish', 'English']
+
+LegalStatus :
+  type : categorical
+  values :  ['Deferred Sentencing', 'Pretrial', 'Other', 'Conditional Release', 'Post Sentence', 'Probation Violator', 'Parole Violator']
+
+CustodyStatus :
+  type : categorical
+  values :  ['Pretrial Defendant', 'Parole', 'Jail Inmate', 'Prison Inmate', 'Residential Program', 'Probation']
+
+MaritalStatus :
+  type : categorical
+  values :  ['Unknown', 'Significant Other', 'Divorced', 'Widowed', 'Married', 'Single', 'Separated']
+
+Screening_Date:
+  type: date
+
+RecSupervisionLevel :
+  type : categorical
+  values : [1, 2, 3, 4]
+
+RecSupervisionLevelText :
+  type : categorical
+  values : ['Low', 'Medium', 'High', 'Medium with Override Consideration']
+
+Scale_ID :
+  type : categorical
+  values : [8, 18, 7]
+
+DisplayText :
+  type : categorical
+  values : ['Risk of Recidivism', 'Risk of Failure to Appear', 'Risk of Violence']
+
+RawScore:
+  type: numerical
+
+DecileScore :
+  type : categorical
+  values : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, -1]
+
+ScoreText :
+  type : categorical
+  values : [nan, 'Low', 'Medium', 'High']
+
+AssessmentType :
+  type : categorical
+  values : ['New', 'Copy']
+
+IsCompleted :
+  type : categorical
+  values : [1]
+
+IsDeleted :
+  type : categorical
+  values : [0]

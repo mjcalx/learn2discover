@@ -7,6 +7,8 @@ from loggers.logger_factory import LoggerFactory
 import pandas as pd
 
 class DatasetManager:
+    instance = None
+
     def __init__(self, random_state: int=42):
         """_summary_
         Args:
@@ -23,6 +25,13 @@ class DatasetManager:
         self.outcomes = pd.Series([None]*len(self.data))
         self.fairness_labels = pd.Series([None]*len(self.data))
         self.labelling_scheme = None
+        DatasetManager.instance = self
+    
+    @staticmethod
+    def get_instance():
+        if DatasetManager.instance is None:
+            DatasetManager.instance = DatasetManager()
+        return DatasetManager.instance
 
     def parse_data_instances(self, attributes: DataAttributes):
         self.attributes = attributes
@@ -32,6 +41,6 @@ class DatasetManager:
     def label_instance(self, idx: int, label: Label):
         self.fairness_labels[idx] = label
 
-    def get_instance(self, idx: int) -> pd.Series:
+    def get_data_instance(self, idx: int) -> pd.Series:
         combined = pd.concat([self.X.loc[idx], self.Y.loc[idx]])
         return combined

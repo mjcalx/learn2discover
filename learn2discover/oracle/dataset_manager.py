@@ -1,12 +1,11 @@
 import numpy as np
 from data.schema import Schema
 from data.loader import Loader
-from data.data_classes import DataAttributes
-from data.data_classes import Label
+from data.data_classes import DataAttributes, Label
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 import pandas as pd
-# ! WIP
+
 class DatasetManager:
     def __init__(self, random_state: int=42):
         """_summary_

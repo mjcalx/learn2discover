@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 from typing import List
 
-root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)) )
+root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 l2d_path = os.path.join(root_path, 'learn2discover')
 try:
     sys.path.index(l2d_path)
@@ -18,6 +18,8 @@ from oracle.dataset_manager import DatasetManager
 from collections import OrderedDict
 from compas_oracle import CompasOracle
 
+ORACLE_TYPE = CompasOracle
+
 def _determine_compas_outcomes(outputs: pd.DataFrame):
     """
     Determines the outcome for each data instance based on its output values
@@ -31,7 +33,8 @@ if __name__ == "__main__":
     """
     config  = ConfigManager(os.getcwd())
     datamgr = DatasetManager()
-    oracle = CompasOracle()
+    oracle = ORACLE_TYPE()
+
     schema = datamgr.schema
     data   = datamgr.data
     assert datamgr.schema is not None

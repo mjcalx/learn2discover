@@ -1,5 +1,15 @@
+import os
+import sys
 import pandas as pd
 from typing import List, Dict
+
+root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+datagen_path = os.path.join(root_path, 'data_generation')
+try:
+    sys.path.index(datagen_path)
+except ValueError:
+    sys.path.append(datagen_path)
+
 from data.data_classes import Label, Outcome
 from oracle.dataset_manager import DatasetManager
 from mock_oracle import MockOracle

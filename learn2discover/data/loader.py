@@ -36,8 +36,8 @@ class Loader:
         # Validity checks
         for i in range(len(data.columns)):
             cname = data.columns[i]
-            # Check that the schema size corresponds to the number of variables
-            assert len(schema.keys()) == len(data.columns)
+            # Check that the schema corresponds to the variables in the data
+            assert set(schema.keys()) == set(data.columns)
             # Check that all values in the categorical data are represented in the schema
             if schema.get_type(cname) == VarType.CATEGORICAL:
                 unique_categories = set(data.iloc[:,i].astype(str))

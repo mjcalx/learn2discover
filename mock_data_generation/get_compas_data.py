@@ -16,7 +16,7 @@ from data.loader import Loader
 from data.data_classes import DataAttributes, Outcome, Label
 from oracle.dataset_manager import DatasetManager
 from collections import OrderedDict
-from mock_oracle import set_labels
+from compas_oracle import CompasOracle
 
 def _determine_compas_outcomes(outputs: pd.DataFrame):
     """
@@ -31,26 +31,20 @@ if __name__ == "__main__":
     """
     config  = ConfigManager(os.getcwd())
     datamgr = DatasetManager()
+    oracle = CompasOracle()
     schema = datamgr.schema
     data   = datamgr.data
     assert datamgr.schema is not None
+
 
     OUTPUT_ATTRIBUTES = ['DisplayText', 'RawScore', 'DecileScore', 'ScoreText', 'AssessmentType', 'IsCompleted',
                         'IsDeleted']
     INPUT_ATTRIBUTES = [i for i in schema.keys() if i not in set(OUTPUT_ATTRIBUTES)]
     SENSITIVE = ["Sex_Code_Text", "Ethnic_Code_Text"]
 
-    # parse_data():
     attributes = DataAttributes(INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES)
-
     datamgr.parse_data_instances(attributes)
-
     datamgr.outcomes = _determine_compas_outcomes(datamgr.Y)
+
     assert len(datamgr.outcomes) == len(datamgr.X)
-    datamgr.fairness_labels = set_labels(datamgr, SENSITIVE)
-    label_count = lambda label : len(datamgr.fairness_labels[lambda x : x == label])
-    fair_count   = label_count(Label.FAIR)
-    unfair_count = label_count(Label.UNFAIR)
-    print(f"Fair instances: {fair_count}. Unfair instances: {unfair_count}")
-    print(
-        f"Fair instances %: {fair_count / len(datamgr.data)}%. Unfair instances %: {unfair_count / len(datamgr.data)}%")
+    datamgr.fairness_labels = oracle.set_labels(SENSITIVE)

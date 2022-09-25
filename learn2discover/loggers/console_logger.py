@@ -10,17 +10,20 @@ class ConsoleLogger(Logger):
     def debug(self, message):
         if self.log_level == 'debug':
             current_datetime = datetime.now()
-            print('[DEBUG][' + str(current_datetime) + '][' + self.class_name + '] ' + message)
+            self._msg_format('DEBUG',message)
 
     def info(self, message):
         if self.log_level == 'info':
             current_datetime = datetime.now()
-            print('[INFO][' + str(current_datetime) + '][' + self.class_name + '] ' + message)
+            self._msg_format('INFO',message)
 
     def warn(self, message):
         current_datetime = datetime.now()
-        print('[WARN][' + str(current_datetime) + '][' + self.class_name + '] ' + message)
+        self._msg_format('WARN',message)
 
     def error(self, message):
         current_datetime = datetime.now()
-        print('[ERROR][' + str(current_datetime) + '][' + self.class_name + '] ' + message)
+        self._msg_format('ERROR',message)
+    
+    def _msg_format(self, type_str, msg):
+        print(f'[{type_str}][{str(datetime.now())}][{self.class_name}] {msg}')

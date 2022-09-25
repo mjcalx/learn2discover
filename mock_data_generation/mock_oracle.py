@@ -1,35 +1,8 @@
 import pandas as pd
 from typing import List, Dict
-from data.data_classes import DataInstance, Label, Outcome, FileData
+from data.data_classes import Label, Outcome
 from oracle.dataset_manager import DatasetManager
 
-def _compute_group_fairness(sensitive_attribute: str, instances: List[DataInstance]):
-    """
-    Computes the group fairness for a single attribute
-    """
-
-    # Store each of the attribute's values and corresponding group fairness in a dictionary
-    group_fairness = {}
-
-    # Add each unique value for the sensitive attribute to the dictionary
-    for instance in instances:
-        if instance.inputs[sensitive_attribute] not in group_fairness:
-            group_fairness[instance.inputs[sensitive_attribute]] = 0
-
-    # Compute the group fairness for each attribute
-    for value in group_fairness.keys():
-        pass_count = 0
-        value_count = 0
-
-        for instance in instances:
-            if instance.inputs[sensitive_attribute] == value:
-                value_count += 1
-                if instance.outcome.value:
-                    pass_count += 1
-
-        group_fairness[value] = pass_count / value_count
-
-    return group_fairness
 
 def _compute_group_fairness(sensitive_attribute: str, possible_values: List[str], dmgr: DatasetManager):
     """

@@ -13,16 +13,10 @@ except ValueError:
 from configs.config_manager import ConfigManager
 from data.schema import Schema
 from data.loader import Loader
-from data.data_classes import DataAttributes, FileData, DataInstance, Outcome, Label
+from data.data_classes import DataAttributes, Outcome, Label
 from oracle.dataset_manager import DatasetManager
 from collections import OrderedDict
 from mock_oracle import set_labels
-
-def _read_compas_data(filepath: str) -> FileData:
-    """
-    Reads a COMPAS csv data file
-    """
-    return parse_data(filepath, INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES)
 
 def _determine_compas_outcomes(outputs: pd.DataFrame):
     """

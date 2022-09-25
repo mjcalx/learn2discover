@@ -1,5 +1,6 @@
 import os
 import sys
+import pandas as pd
 from typing import List
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)) )
@@ -12,7 +13,8 @@ except ValueError:
 from configs.config_manager import ConfigManager
 from data.schema import Schema
 from data.loader import Loader
-from data.data_classes import DataAttributes, FileData, DataInstance, Outcome
+from data.data_classes import DataAttributes, FileData, DataInstance, Outcome, Label
+from oracle.dataset_manager import DatasetManager
 from collections import OrderedDict
 from mock_oracle import set_labels
 from read_data import parse_data
@@ -23,54 +25,44 @@ def _read_compas_data(filepath: str) -> FileData:
     """
     return parse_data(filepath, INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES)
 
-def _determine_compas_outcomes(instances: List[DataInstance]):
+def _determine_compas_outcomes(outputs: pd.DataFrame):
     """
     Determines the outcome for each data instance based on its output values
     """
-    for instance in instances:
-        # TODO: Determine a reasonable way to identify which instances pass and fail
-        if instance.outputs["ScoreText"] in ["High", "Medium"]:
-            instance.outcome = Outcome.FAIL
-        else:
-            instance.outcome = Outcome.PASS
+    assign_outcome = lambda x : Outcome.FAIL if str(x["ScoreText"]) in ["High", "Medium", "nan"] else Outcome.PASS
+    return outputs.apply(assign_outcome, axis=1)
 
-def get_compas_data(filepath: str, sensitive_attributes: List[str]) -> FileData:
-    """
-    Reads COMPAS csv data files, and applies a fairness label to its sensitive attributes
-    """
-    # TODO: Refactor to take output decider function as input parameter
-    unlabelled_data = _read_compas_data(filepath)
-    _determine_compas_outcomes(unlabelled_data.instances)
-    return set_labels(unlabelled_data, sensitive_attributes)
+
+
+    
 
 
 if __name__ == "__main__":
     """
     A simple test example to show that everything is working
     """
-    config = ConfigManager(os.getcwd())
-    loader = Loader()
-    schema, data = loader.load_data()
+    config  = ConfigManager(os.getcwd())
+    datamgr = DatasetManager()
+    schema = datamgr.schema
+    data   = datamgr.data
+    assert datamgr.schema is not None
 
     OUTPUT_ATTRIBUTES = ['DisplayText', 'RawScore', 'DecileScore', 'ScoreText', 'AssessmentType', 'IsCompleted',
                         'IsDeleted']
     INPUT_ATTRIBUTES = [i for i in schema.keys() if i not in set(OUTPUT_ATTRIBUTES)]
+    SENSITIVE = ["Sex_Code_Text", "Ethnic_Code_Text"]
 
-    testpath = "../datasets/original/COMPAS/compas-scores-raw.csv"
-    sample_sensitive_attributes = ["Sex_Code_Text", "Ethnic_Code_Text"]
+    # parse_data():
+    attributes = DataAttributes(INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES)
 
-    # Get the labelled data
-    data = get_compas_data(testpath, sample_sensitive_attributes)
+    datamgr.parse_data_instances(attributes)
 
-    # See how many instances are fair vs unfair
-    fair_count = 0
-    unfair_count = 0
-    for instance in data.instances:
-        if instance.label.value:
-            fair_count += 1
-        else:
-            unfair_count += 1
-
+    datamgr.outcomes = _determine_compas_outcomes(datamgr.Y)
+    assert len(datamgr.outcomes) == len(datamgr.X)
+    datamgr.fairness_labels = set_labels(datamgr, SENSITIVE)
+    label_count = lambda label : len(datamgr.fairness_labels[lambda x : x == label])
+    fair_count   = label_count(Label.FAIR)
+    unfair_count = label_count(Label.UNFAIR)
     print(f"Fair instances: {fair_count}. Unfair instances: {unfair_count}")
     print(
-        f"Fair instances %: {fair_count / len(data.instances)}%. Unfair instances %: {unfair_count / len(data.instances)}%")
+        f"Fair instances %: {fair_count / len(datamgr.data)}%. Unfair instances %: {unfair_count / len(datamgr.data)}%")

@@ -24,7 +24,6 @@ class DatasetManager:
         self.Y = None
         self.outcomes = pd.Series([None]*len(self.data))
         self.fairness_labels = pd.Series([None]*len(self.data))
-        self.labelling_scheme = None
         DatasetManager.instance = self
     
     @staticmethod
@@ -37,10 +36,3 @@ class DatasetManager:
         self.attributes = attributes
         self.X = self.data[self.attributes.inputs]
         self.Y = self.data[self.attributes.outputs]
-
-    def label_instance(self, idx: int, label: Label):
-        self.fairness_labels[idx] = label
-
-    def get_data_instance(self, idx: int) -> pd.Series:
-        combined = pd.concat([self.X.loc[idx], self.Y.loc[idx]])
-        return combined

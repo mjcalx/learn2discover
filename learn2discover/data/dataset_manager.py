@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from data.schema import Schema
 from data.loader import Loader
@@ -27,12 +28,12 @@ class DatasetManager:
         DatasetManager.instance = self
     
     @staticmethod
-    def get_instance():
+    def get_instance() -> DatasetManager:
         if DatasetManager.instance is None:
             DatasetManager.instance = DatasetManager()
         return DatasetManager.instance
 
-    def parse_data_instances(self, attributes: DataAttributes):
+    def parse_data_instances(self, attributes: DataAttributes) -> None:
         self.attributes = attributes
         self.X = self.data[self.attributes.inputs]
         self.Y = self.data[self.attributes.outputs]

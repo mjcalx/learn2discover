@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import List, Dict, Tuple
 from loggers.logger_factory import LoggerFactory
 from collections import OrderedDict
 from enum import Enum
@@ -17,7 +19,7 @@ class Schema(OrderedDict):
     ERR_BAD_VARIABLE_TYPE     = 'BadVariableType'
     ERR_MULTIPLE_OR_NO_LABELS = 'MultipleOrNoLabels'
 
-    def __init__(self, parsed_yaml: dict):
+    def __init__(self, parsed_yaml: Dict):
         super(Schema, self).__init__(parsed_yaml)
         self.logger = LoggerFactory.get_logger(__class__.__name__) 
         self.label_key = None
@@ -31,7 +33,7 @@ class Schema(OrderedDict):
             self.logger.error(f'KeyError: "{key}" for schema when retrieving type')
             raise
 
-    def get_variable_values(self, key: str) -> tuple:
+    def get_variable_values(self, key: str) -> Tuple:
         """
         Values are strings if categorical; otherwise returns an empty tuple
         """
@@ -49,7 +51,7 @@ class Schema(OrderedDict):
         assert self.label_key is not None
         return self.label_key
 
-    def _validate(self):
+    def _validate(self) -> None:
         """Check that data meets constraints/is valid"""
         try:
             # Validity Checks
@@ -74,7 +76,7 @@ class Schema(OrderedDict):
             self.logger.error(f'{e} : categorical variables must have non-empty dict of unique values')
             raise
 
-    def _validate_categories(self, key):
+    def _validate_categories(self, key) -> None:
         if self.VALUES_STR not in self[key].keys():
             raise KeyError(self.ERR_MISSING_VALUES_KEY)
         values_read = self[key][self.VALUES_STR]
@@ -109,5 +111,5 @@ class VarType(Enum):
         return NotImplemented
     
     @staticmethod
-    def values():
+    def values() -> List[VarType]:
         return [VarType[v].value for v in VarType.__members__]

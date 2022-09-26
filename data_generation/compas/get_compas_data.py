@@ -20,7 +20,7 @@ from compas_oracle import CompasOracle
 
 ORACLE_TYPE = CompasOracle
 
-def _determine_compas_outcomes(outputs: pd.DataFrame):
+def _determine_compas_outcomes(outputs: pd.DataFrame) -> pd.Series:
     """
     Determines the outcome for each data instance based on its output values
     """

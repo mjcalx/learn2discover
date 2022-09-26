@@ -33,7 +33,6 @@ if __name__ == "__main__":
     """
     config  = ConfigManager(os.getcwd())
     datamgr = DatasetManager()
-    oracle = ORACLE_TYPE()
 
     schema = datamgr.schema
     data   = datamgr.data
@@ -44,10 +43,11 @@ if __name__ == "__main__":
                         'IsDeleted']
     INPUT_ATTRIBUTES = [i for i in schema.keys() if i not in set(OUTPUT_ATTRIBUTES)]
     SENSITIVE = ["Sex_Code_Text", "Ethnic_Code_Text"]
+    oracle = ORACLE_TYPE(SENSITIVE)
 
     attributes = DataAttributes(INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES)
     datamgr.parse_data_instances(attributes)
     datamgr.outcomes = _determine_compas_outcomes(datamgr.Y)
 
     assert len(datamgr.outcomes) == len(datamgr.X)
-    datamgr.fairness_labels = oracle.set_labels(SENSITIVE)
+    datamgr.fairness_labels = oracle.set_labels()

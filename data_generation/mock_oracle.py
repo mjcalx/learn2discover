@@ -1,5 +1,5 @@
 import pandas as pd
-from oracle.dataset_manager import DatasetManager
+from data.dataset_manager import DatasetManager
 from loggers.logger_factory import LoggerFactory
 
 class MockOracle:

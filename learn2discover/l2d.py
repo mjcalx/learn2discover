@@ -4,7 +4,7 @@ import traceback
 from configs.config_manager import ConfigManager
 from utils.logging_utils import LoggingUtils
 from loggers.logger_factory import LoggerFactory
-from oracle.dataset_manager import DatasetManager
+from data.dataset_manager import DatasetManager
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 
 current_path = os.path.dirname(os.path.realpath(__file__)) 

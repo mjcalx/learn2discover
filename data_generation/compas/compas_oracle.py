@@ -11,7 +11,7 @@ except ValueError:
     sys.path.append(datagen_path)
 
 from data.data_classes import Label, Outcome
-from oracle.dataset_manager import DatasetManager
+from data.dataset_manager import DatasetManager
 from mock_oracle import MockOracle
 
 class CompasOracle(MockOracle):

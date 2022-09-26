@@ -14,7 +14,7 @@ from configs.config_manager import ConfigManager
 from data.schema import Schema
 from data.loader import Loader
 from data.data_classes import DataAttributes, Outcome, Label
-from oracle.dataset_manager import DatasetManager
+from data.dataset_manager import DatasetManager
 from collections import OrderedDict
 from compas_oracle import CompasOracle
 

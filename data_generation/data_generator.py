@@ -1,11 +1,11 @@
 import pandas as pd
 from loggers.logger_factory import LoggerFactory
-from mock_oracle import MockOracle
+from data_generation.oracles.abstract_mock_oracle import AbstractMockOracle
 from system_under_test import SystemUnderTest
 from data.dataset_manager import DatasetManager
 
 class DataGenerator:
-    def __init__(self, sut: SystemUnderTest, oracle: MockOracle):
+    def __init__(self, sut: SystemUnderTest, oracle: AbstractMockOracle):
         """
         This class is a mediator between the DatasetManager, a SystemUnderTest 
         and some MockOracle.

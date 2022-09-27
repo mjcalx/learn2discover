@@ -12,11 +12,11 @@ except ValueError:
 
 from data.data_classes import Label, Outcome
 from data.dataset_manager import DatasetManager
-from mock_oracle import MockOracle
+from abstract_mock_oracle import AbstractMockOracle
 
-class CompasOracle(MockOracle):
+class GroupFairnessOracle(AbstractMockOracle):
     def __init__(self, sensitive_attributes: List[str]):
-        super(CompasOracle, self).__init__()
+        super(GroupFairnessOracle, self).__init__()
         self.sensitive_attributes = sensitive_attributes
 
     def set_labels(self) -> pd.Series:

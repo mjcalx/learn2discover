@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
+from itertools import chain
 from data.schema import Schema
 from data.loader import Loader
 from data.data_classes import DataAttributes, Label, Outcome, ParamType
-from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 import pandas as pd
 
@@ -20,15 +20,31 @@ class DatasetManager:
         self.loader = Loader()
         self.schema, self.data = self.loader.load_data()
 
+        # Init properties
         self.attributes = attributes
         self.X = None
         self.Y = None
-        if self.attributes is not None:
-            self.parse_data_instances()
         self.dataset = None
-        
         self.outcomes = pd.Series([None]*len(self.data))
         self.fairness_labels = pd.Series([None]*len(self.data))
+
+        # Repopulate properties from CSV (in training mode)
+        #! Assumptions:
+        #! - Data is never multiindexed in generation mode
+        #! - Data is always multiindexed in training mode
+        if isinstance(self.data.columns, pd.MultiIndex):
+            idxs = [self.data[x].columns for x in [ParamType.INPUTS.value, ParamType.OUTPUTS.value]]
+            attribute_index = pd.Index(list(chain(*idxs)))
+            inputs, outputs = [list(x) for x in idxs]
+            self.attributes = DataAttributes(inputs, outputs)
+            self.dataset = self.data
+            self.data = self.data.droplevel(0, axis=1)[attribute_index]
+            self.outcomes = self.dataset[ParamType.OUTCOME.value][ParamType.OUTCOME.value]
+            self.fairness_labels = self.dataset[ParamType.FAIRNESS.value][ParamType.FAIRNESS.value]
+
+        if self.attributes is not None:
+            self.parse_data_instances()
+        
         DatasetManager.instance = self
     
     @staticmethod

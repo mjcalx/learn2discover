@@ -112,7 +112,7 @@ def get_mock_data(filepath: str, input_attributes: List[str], output_attributes:
     return set_mock_labels(unlabelled_data, sensitive_attributes)
 
 
-def _filedata_is_labelled(file_data: FileData):
+def _filedata_is_labelled(file_data: FileData) -> bool:
     """
     Checks whether each data instance in the file_data has been assigned both a TestOutcome and a FairnessLabel
     """
@@ -123,7 +123,7 @@ def _filedata_is_labelled(file_data: FileData):
     return True
 
 
-def create_l2d_input_csv(labelled_data: FileData):
+def create_l2d_input_csv(labelled_data: FileData) -> None:
     """Creates a new CSV file in the format expected by the active learning loop in Learn2Discover
 
     Parameters:

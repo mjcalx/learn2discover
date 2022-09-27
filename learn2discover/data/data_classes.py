@@ -43,7 +43,7 @@ class Outcome(Enum):
     FAIL = False
 
 class ParamType(Enum):
-    INPUTS   = "inputs"
-    OUTPUTS  = "outputs"
-    OUTCOME  = "outcome"
-    FAIRNESS = "fairness_label"
+    INPUTS   = "INPUTS"
+    OUTPUTS  = "OUTPUTS"
+    OUTCOME  = "TEST_OUTCOME"
+    FAIRNESS = "FAIRNESS_LABEL"

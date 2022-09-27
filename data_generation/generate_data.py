@@ -20,9 +20,9 @@ from compas.compas_sut import Compas
 from data_generation.oracles.group_fairness_oracle import GroupFairnessOracle
 #########################################################
 
-SUT_TYPE    : SystemUnderTest = Compas
-ORACLE_TYPE : AbstractMockOracle      = GroupFairnessOracle
-ORACLE_ARGS : Dict            = {'sensitive_attributes': ["Sex_Code_Text", "Ethnic_Code_Text"]}
+SUT_TYPE    : SystemUnderTest    = Compas
+ORACLE_TYPE : AbstractMockOracle = GroupFairnessOracle
+ORACLE_ARGS : Dict               = {'sensitive_attributes': ["Sex_Code_Text", "Ethnic_Code_Text"]}
 
 if __name__=="__main__":
     """

@@ -1,8 +1,11 @@
-dataset_settings:
+generator_settings:
   schema_file: ../datasets/schemas/schema_compas.yml
   data_file: ../datasets/original/COMPAS/compas-scores-raw.csv
   index_column_included: false
   delimiter: ','
+
+output_settings:
+  output_csv: ../datasets/generated/compas.csv
 
 log:
   primary_logger_type: console

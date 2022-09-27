@@ -9,7 +9,6 @@ class ConfigManager:
     
     CONFIG_FILE_TRAINING = 'config.yml'
     CONFIG_FILE_GENERATE = '../data_generation/config.yml'
-    # CONFIG_FILE_GENERATE = 'config.yml'
     MODES = {
         MODE_STR_TRAINING : CONFIG_FILE_TRAINING, 
         MODE_STR_GENERATE : CONFIG_FILE_GENERATE
@@ -74,10 +73,12 @@ class ConfigManager:
         self.log_level = self.configs.get('log').get('log_level')
 
     def _load_data_gen_configs(self) -> None:
-        self.schema_file           = self.configs.get('dataset_settings').get('schema_file')
-        self.data_file             = self.configs.get('dataset_settings').get('data_file')
-        self.index_column_included = self.configs.get('dataset_settings').get('index_column_included')
-        self.delimiter             = self.configs.get('dataset_settings').get('delimiter')
+        self.schema_file           = self.configs.get('generator_settings').get('schema_file')
+        self.data_file             = self.configs.get('generator_settings').get('data_file')
+        self.index_column_included = self.configs.get('generator_settings').get('index_column_included')
+        self.delimiter             = self.configs.get('generator_settings').get('delimiter')
+        
+        self.output_csv = self.configs.get('output_settings').get('output_csv')
 
         assert isinstance(self.index_column_included, bool)
 

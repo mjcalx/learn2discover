@@ -8,6 +8,10 @@ from loggers.logger_factory import LoggerFactory
 import pandas as pd
 
 class DatasetManager:
+    INPUTS_LVL_STR   = "inputs"
+    OUTPUTS_LVL_STR  = "outputs"
+    OUTCOME_LVL_STR  = "outcome"
+    FAIRNESS_LVL_STR = "fairness_label"
     instance = None
 
     def __init__(self, random_state: int=42, attributes: DataAttributes=None):
@@ -61,7 +65,7 @@ class DatasetManager:
         assert len(self.fairness_labels) == len(self.X), n
 
         self.fairness_labels = fairness_labels
-        self.fairness_labels.rename('fairness_label', inplace=True)
+        self.fairness_labels.rename(DatasetManager.FAIRNESS_LVL_STR, inplace=True)
 
     def format_dataset(self) -> pd.DataFrame:
         """
@@ -78,9 +82,9 @@ class DatasetManager:
 
         df = pd.concat([self.data, self.outcomes, self.fairness_labels], axis=1)
         levels = [
-                *['inputs']*len(self.attributes.inputs), 
-                *['outputs']*len(self.attributes.outputs), 
-                'outcome', 'fairness_label']
+                *[DatasetManager.INPUTS_LVL_STR]*len(self.attributes.inputs), 
+                *[DatasetManager.OUTPUTS_LVL_STR]*len(self.attributes.outputs), 
+                DatasetManager.OUTCOME_LVL_STR, DatasetManager.FAIRNESS_LVL_STR]
         codes = [*self.attributes.inputs, *self.attributes.outputs, 
                 self.outcomes.name, self.fairness_labels.name]
         assert len(levels) == len(codes)
@@ -90,3 +94,9 @@ class DatasetManager:
         df.columns = cols
         self.dataset = df
         return self.dataset
+
+    def save_dataset(self):
+        if self.dataset is None:
+            self.logger.debug("Labelled dataset is incomplete and will not be written.")
+            raise ValueError()
+        

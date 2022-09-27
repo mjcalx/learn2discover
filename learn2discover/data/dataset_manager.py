@@ -25,6 +25,7 @@ class DatasetManager:
         self.Y = None
         if self.attributes is not None:
             self.parse_data_instances()
+        self.dataset = None
         
         self.outcomes = pd.Series([None]*len(self.data))
         self.fairness_labels = pd.Series([None]*len(self.data))
@@ -69,6 +70,8 @@ class DatasetManager:
         Returns:
             pd.DataFrame: _description_
         """
+        if self.dataset is not None:
+            return self.dataset
         m = '"All data must be instantiated before calling "format_dataset()"'
         data = [self.X, self.Y, self.outcomes, self.fairness_labels]
         assert all([d is not None for d in data]), m

@@ -16,15 +16,24 @@ import datetime
 import re
 import os
 from random import shuffle
-from collections import defaultdict    
+from collections import defaultdict
 
-from lib.pytorch_active_learning.active_learning_basics import SimpleTextClassifier
+root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+current_path = os.path.join(root_path, 'learn2discover')
+lib_path = os.path.join(root_path,'lib')
 
-current_path = os.path.dirname(os.path.realpath(__file__)) 
-try:
-    sys.path.index(current_path)
-except ValueError:
-    sys.path.append(current_path)
+for path in [root_path, current_path, lib_path]:
+    if path not in sys.path:
+        sys.path.append(path)
+sys.path.index(current_path)
+sys.path.index(lib_path)
+
+from configs.config_manager import ConfigManager
+from utils.logging_utils import LoggingUtils
+from loggers.logger_factory import LoggerFactory
+from data.schema import VarType
+from data.dataset_manager import DatasetManager
+from data.data_classes import ParamType
 
 def main():
     learn_to_discover = Learn2Discover()

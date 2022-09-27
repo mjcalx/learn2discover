@@ -12,7 +12,7 @@ except ValueError:
 
 from data.data_classes import Label, Outcome
 from data.dataset_manager import DatasetManager
-from abstract_mock_oracle import AbstractMockOracle
+from oracles.abstract_mock_oracle import AbstractMockOracle
 
 class GroupFairnessOracle(AbstractMockOracle):
     def __init__(self, sensitive_attributes: List[str]):

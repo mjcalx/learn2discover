@@ -97,9 +97,10 @@ class FileData:
     A class for storing a full file's data
     """
 
-    def __init__(self, attributes: DataAttributes, instances: List[DataInstance]):
+    def __init__(self, attributes: DataAttributes, instances: List[DataInstance], filename: str):
         self._attributes = attributes
         self._instances = instances
+        self._filename = filename
 
     @property
     def attributes(self):
@@ -116,3 +117,11 @@ class FileData:
     @instances.setter
     def instances(self, instances: List[DataInstance]):
         self._instances = instances
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @filename.setter
+    def filename(self, filename: str):
+        self._filename = filename

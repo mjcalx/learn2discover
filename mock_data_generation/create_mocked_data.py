@@ -1,6 +1,8 @@
 import csv
 from typing import List, Callable
 
+import numpy as np
+
 from data_classes import DataAttributes, DataInstance, FileData, TestOutcome
 from mock_data_generation.mock_oracle import set_mock_labels
 
@@ -72,8 +74,10 @@ def _parse_data(filepath: str, input_attributes: List[str], output_attributes: L
 
     attributes = DataAttributes(input_attributes, output_attributes)
     instances = _parse_instances(rows, attributes)
+    # Get the file's original name from the filepath (excluding the .csv extension)
+    filename = filepath.split("/")[-1][:-4]
 
-    return FileData(attributes, instances)
+    return FileData(attributes, instances, filename)
 
 
 def get_mock_data(filepath: str, input_attributes: List[str], output_attributes: List[str],
@@ -106,3 +110,49 @@ def get_mock_data(filepath: str, input_attributes: List[str], output_attributes:
 
     # Apply mocked fairness labels to each data instance
     return set_mock_labels(unlabelled_data, sensitive_attributes)
+
+
+def _filedata_is_labelled(file_data: FileData):
+    """
+    Checks whether each data instance in the file_data has been assigned both a TestOutcome and a FairnessLabel
+    """
+    for instance in file_data.instances:
+        if instance.label is None or instance.outcome is None:
+            return False
+
+    return True
+
+
+def create_l2d_input_csv(labelled_data: FileData):
+    """Creates a new CSV file in the format expected by the active learning loop in Learn2Discover
+
+    Parameters:
+          labelled_data (FileData): Data from the raw data file where each data instance has been assigned a
+          TestOutcome and a FairnessLabel
+    """
+    assert _filedata_is_labelled(labelled_data), "The file data has not been fully labelled with both test outcomes " \
+                                                 "and fairness labels"
+
+    TEST_OUTCOME = "TEST_OUTCOME"
+    FAIRNESS_LABEL = "FAIRNESS_LABEL"
+    csv_path = f"../datasets/mock_generated/{labelled_data.filename}-MOCK_LABELLING.csv"
+
+    with open(csv_path, "w", newline="") as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL)
+
+        # Write the headers
+        headers_array = np.concatenate((labelled_data.attributes.inputs, ([TEST_OUTCOME, FAIRNESS_LABEL])))
+        filewriter.writerow(headers_array)
+
+        # Write each data instance
+        for instance in labelled_data.instances:
+            instance_array = []
+            for header in headers_array:
+                if header == TEST_OUTCOME:
+                    instance_array.append(instance.outcome.name)
+                elif header == FAIRNESS_LABEL:
+                    instance_array.append(instance.label.name)
+                else:
+                    instance_array.append(instance.inputs[header])
+            filewriter.writerow(instance_array)
+    csvfile.close()

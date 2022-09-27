@@ -1,5 +1,5 @@
 from data_classes import DataInstance, TestOutcome
-from create_mocked_data import get_mock_data
+from create_mocked_data import get_mock_data, create_l2d_input_csv
 
 INPUT_ATTRIBUTES = ['Person_ID', 'AssessmentID', 'Case_ID', 'Agency_Text', 'LastName', 'FirstName', 'MiddleName',
                     'Sex_Code_Text', 'Ethnic_Code_Text', 'DateOfBirth', 'ScaleSet_ID', 'ScaleSet', 'AssessmentReason',
@@ -34,15 +34,28 @@ if __name__ == "__main__":
     data = get_mock_data(DATA_PATH, INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES, sample_sensitive_attributes,
                          determine_compas_outcome)
 
-    # See how many instances are fair vs unfair
-    fair_count = 0
-    unfair_count = 0
-    for instance in data.instances:
-        if instance.label.value:
-            fair_count += 1
-        else:
-            unfair_count += 1
+    # print(DATA_PATH.split("/")[-1][:-4])
+    create_l2d_input_csv(data)
 
-    print(f"Fair instances: {fair_count}. Unfair instances: {unfair_count}")
-    print(
-        f"Fair instances %: {fair_count / len(data.instances)}%. Unfair instances %: {unfair_count / len(data.instances)}%")
+    # # See how many instances are fair vs unfair
+    # fair_count = 0
+    # unfair_count = 0
+    # pass_unfair_count = 0
+    # fail_fair_count = 0
+    # for instance in data.instances:
+    #     if instance.label.value:
+    #         fair_count += 1
+    #     else:
+    #         unfair_count += 1
+    #
+    #     if instance.outcome.value and not instance.label.value:
+    #         pass_unfair_count += 1
+    #
+    #     if not instance.outcome.value and instance.label.value:
+    #         fail_fair_count += 1
+    #
+    # print(f"Fair instances: {fair_count}. Unfair instances: {unfair_count}")
+    # print(
+    #     f"Fair instances %: {fair_count / len(data.instances)}%. Unfair instances %: {unfair_count / len(data.instances)}%")
+    # print(f"Pass unfairly count: {pass_unfair_count}. Percent: {pass_unfair_count / len(data.instances)}")
+    # print(f"Fail fairly count: {fail_fair_count}. Percent: {fail_fair_count / len(data.instances)}")

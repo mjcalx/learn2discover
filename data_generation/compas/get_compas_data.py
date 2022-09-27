@@ -18,6 +18,7 @@ from data.dataset_manager import DatasetManager
 from collections import OrderedDict
 from compas_oracle import CompasOracle
 from system_under_test import SystemUnderTest
+from data_generator import DataGenerator
 
 class Compas(SystemUnderTest):
     def evaluate_outcomes(self, outputs: pd.DataFrame) -> pd.Series:
@@ -37,20 +38,17 @@ if __name__ == "__main__":
 
     schema = datamgr.schema
     data   = datamgr.data
-    assert datamgr.schema is not None
-
 
     OUTPUT_ATTRIBUTES = ['DisplayText', 'RawScore', 'DecileScore', 'ScoreText', 'AssessmentType', 'IsCompleted',
                         'IsDeleted']
     INPUT_ATTRIBUTES = [i for i in schema.keys() if i not in set(OUTPUT_ATTRIBUTES)]
     SENSITIVE = ["Sex_Code_Text", "Ethnic_Code_Text"]
     
-    sut    = Compas()
-    oracle = CompasOracle(SENSITIVE)
-
     attributes = DataAttributes(INPUT_ATTRIBUTES, OUTPUT_ATTRIBUTES)
     datamgr.parse_data_instances(attributes)
-    datamgr.outcomes = sut.evaluate_outcomes(datamgr.Y)
-
-    assert len(datamgr.outcomes) == len(datamgr.X)
-    datamgr.fairness_labels = oracle.set_labels()
+    
+    sut    = Compas()
+    oracle = CompasOracle(SENSITIVE)
+    data_generator = DataGenerator(sut, oracle)
+    dataset = data_generator.generate_data()
+    

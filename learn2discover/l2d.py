@@ -1,30 +1,38 @@
 import os
 import sys
 import traceback
-from configs.config_manager import ConfigManager
-from utils.logging_utils import LoggingUtils
-from loggers.logger_factory import LoggerFactory
-from data.dataset_manager import DatasetManager
-from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
+import pandas as pd
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 import math
 import datetime
 import re
 import os
 from random import shuffle
-from collections import defaultdict    
+from collections import defaultdict
 
-from lib.pytorch_active_learning.active_learning_basics import SimpleTextClassifier
+root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+current_path = os.path.join(root_path, 'learn2discover')
+lib_path = os.path.join(root_path,'lib')
 
-current_path = os.path.dirname(os.path.realpath(__file__)) 
-try:
-    sys.path.index(current_path)
-except ValueError:
-    sys.path.append(current_path)
+for path in [root_path, current_path, lib_path]:
+    if path not in sys.path:
+        sys.path.append(path)
+sys.path.index(current_path)
+sys.path.index(lib_path)
+
+from configs.config_manager import ConfigManager
+from utils.logging_utils import LoggingUtils, Verbosity
+from loggers.logger_factory import LoggerFactory
+from data.schema import VarType
+from data.dataset_manager import DatasetManager
+from data.data_classes import ParamType, Label
+from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
+from oracle.stopping_criteria.stopping_criterion_factory import StoppingCriterionFactory
+from oracle.l2d_classifier import L2DClassifier
+
 
 def main():
     learn_to_discover = Learn2Discover()
@@ -34,7 +42,7 @@ class Learn2Discover:
     """
     Learn2Discover
     """
-    def __init__(self, workspace_dir=os.getcwd(), human=False):
+    def __init__(self, workspace_dir=os.getcwd()):
         self.config_manager = ConfigManager(workspace_dir)
         LoggingUtils.get_instance().debug('Loaded Configurations.')
         try:
@@ -42,397 +50,210 @@ class Learn2Discover:
             self.logger.debug('Loaded Logger.')
             
             self.dataset_manager = DatasetManager()
+            self.dataset = self.dataset_manager.data
             self.logger.debug('Loaded DatasetManager.')
             
-            self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
+            self.query_strategy = QueryStrategyFactory().get_strategy(self.config_manager.query_strategy)
+            self.stopping_criterion = StoppingCriterionFactory().get_stopping_criterion(self.config_manager.stopping_criterion)
 
-            # Constants
-            self.min_evaluation_items = 200
-            self.min_training_items = 50
-            self.epochs = 10
-            self.selections_per_epoch = 40
-
-            self.already_labeled = {} # tracking what is already labeled
-            self.feature_index = {} # feature mapping for one-hot encoding
-
-            self.evaluation_count = len(self.evaluation_data)
-            self.training_count = len(self.training_data)
+            self.test_fraction = self.config_manager.test_fraction
+            
+            _uf = self.config_manager.unlabelled_fraction
+            self.unlabelled_fraction = _uf if _uf is not None else 0
+            self.min_evaluation_items = self.config_manager.min_evaluation_items
+            self.min_training_items = self.config_manager.min_training_items
 
             # Human-specific params
-            if human: 
-                self.get_annotations = self.get_annotations_human
+            if self.config_manager.has_human_in_the_loop: 
+                self._get_annotations = self._get_annotations_human
             else:
-                self.get_annotations = self.get_annotations_auto
-
+                self._get_annotations = self._get_annotations_auto
 
         except BaseException as e:
             self.logger.error(f'{e}')
             self.logger.error('Exiting...')
             print(traceback.format_exc())
             exit()
-    
-    def get_annotations_human(self, data, default_sampling_strategy="random"):
-        # Get annotation data from annotator via command line
-        # TODO: actually code this
-        pass
 
-    def get_annotations_auto(self, data, default_sampling_strategy="random"):
-        # don't need to do anything here :)
-        return data 
+    def run(self):
+        single_iteration_test_flag = False
+        while not self.stopping_criterion() and not single_iteration_test_flag:
+            if self.dataset.evaluation_count <  self.min_evaluation_items:
+                self._fill_evaluation_data()
+         
+            elif self.dataset.training_count < self.min_training_items:
+                self._fill_training_data()
 
-    def append_data(data, to_add):
-        # TODO: merge two sets of input data here
-        pass
-    
-    @staticmethod
-    def make_feature_vector(features, feature_index):
-        vec = torch.zeros(len(feature_index))
-        for feature in features:
-            if feature in feature_index:
-                vec[feature_index[feature]] += 1
-        return vec.view(1, -1)
-    
-    def train_model(self, num_labels=2, vocab_size=0):
+            else:
+                self._learn()
+
+            if self.dataset.training_count > self.min_training_items:
+                self._annotate_and_retrain()
+            
+            single_iteration_test_flag = True
+        self.logger.info('Stopping criterion reached. Exiting...', verbosity=Verbosity.BASE)
+
+    def _train_and_evaluate(self, training_idxs: pd.Index, test_idxs: pd.Index) -> str:
+        train_idxs_shuffled = self.dataset_manager.shuffle(training_idxs)
+        test_idxs_shuffled = self.dataset_manager.shuffle(test_idxs)
+        
+        self.classifier.fit(train_idxs_shuffled)  # Training
+        fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)  # Evaluation
+        
+        model_path = self.classifier.save_model(fscore, auc)
+        return model_path
+
+    def _learn(self):
+        # Train new model with current training data
+        numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
+
+        self.classifier = L2DClassifier(numerical_data.shape[1])
+        
+        model_path = self._train_and_evaluate(
+            training_idxs=self.dataset.training_data.index,
+            test_idxs=self.dataset.evaluation_data.index
+        )
+
+        self.classifier.load_state_dict(torch.load(model_path))
+        
+        # stop training in order to query single samples
+        self.classifier.eval()
+
+        # get 100 items per iteration with the following breakdown of strategies:
+        sampled_idxs = self.dataset_manager.choose_random_unlabelled(self.dataset.unlabelled_idxs)
+        _m = 'run(): selected random sample of {} unlabelled instances'
+        self.logger.debug(_m.format(len(sampled_idxs)))
+
+        random_items = self.dataset.unlabelled_data.loc[sampled_idxs]
+        self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=Verbosity.CHATTY)
+        
+        sample_unlabelled = self.query_strategy.query(self.classifier, random_items)
+
+        # stop using existing model for queries and continue training
+        self.classifier.train()
+ 
+        idxs_shuffled = self.dataset_manager.shuffle(sample_unlabelled.index)
+        shuffled_sample_unlabelled = sample_unlabelled.loc[idxs_shuffled]
+
+        # pass responsibility for labelling to attached oracle
+        annotated_data = self._get_annotations(shuffled_sample_unlabelled)
+
+        self._update_training_data(annotated_data)
+
+    def _annotate_and_retrain(self):
+        self.logger.debug("Retraining model with new data")
+            
+        ########################################### train_model
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
-
-        model = SimpleTextClassifier(num_labels, vocab_size)
-        
+        # UPDATE OUR DATA AND (RE)TRAIN MODEL WITH NEWLY ANNOTATED DATA
+        # vocab_size = create_features() # TODO: replace this method
         # TODO: custom labels
-        label_to_ix = {"fair": 0, "unfair": 1} 
-
-        loss_function = nn.NLLLoss()
-        optimizer = optim.SGD(model.parameters(), lr=0.01)
-
+        self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate}', verbosity=Verbosity.BASE)
         # epochs training
-        for epoch in range(self.epochs):
-            print("Epoch: "+str(epoch))
-            current = 0
 
-            # make a subset of data to use in this epoch
-            # with an equal number of items from each label
+        model_path = self._train_and_evaluate(
+            training_idxs=self.dataset.training_data.index,
+            test_idxs=self.dataset.evaluation_data.index
+        )
+        ###########################################
+        self.classifier.load_state_dict(torch.load(model_path))
 
-            shuffle(self.training_data) #randomize the order of the training data        
-            fair = [row for row in self.training_data if '1' == row[2]]
-            unfair = [row for row in self.training_data if '0' == row[2]]
-            
-            epoch_data = fair[:self.selections_per_epoch]
-            epoch_data += unfair[:self.selections_per_epoch]
-            shuffle(epoch_data) 
-                    
-            # train our model
-            for item in epoch_data:
-                features = item[1].split()
-                label = int(item[2])
+        accuracies = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
+        self.logger.info(f"[fscore, auc] = {accuracies}")
+        self.logger.info(f"Model saved to:  {model_path}")
 
-                model.zero_grad() 
 
-                feature_vec = self.make_feature_vector(features, self.feature_index)
-                target = torch.LongTensor([int(label)])
+    def _fill_training_data(self):
+        # lets create our first training data! 
+        self.logger.debug("Adding to initial training data...")
 
-                log_probs = model(feature_vec)
+        idxs = self.dataset_manager.shuffle(data.index)
+        needed = self.min_training_items - training_count
+        data = data[:needed]
+        # print(str(needed)+" more annotations needed")
 
-                # compute loss function, do backward pass, and update the gradient
-                loss = loss_function(log_probs, target)
-                loss.backward()
-                optimizer.step()    
+        data = self._get_annotations(data)
 
-        fscore, auc = self.evaluate_model(model, self.evaluation_data)
-        fscore = round(fscore,3)
-        auc = round(auc,3)
+        fair = []
+        unfair = []
 
-        # save model to path that is alphanumeric and includes number of items and accuracies in filename
-        timestamp = re.sub('\.[0-9]*','_',str(datetime.datetime.now())).replace(" ", "_").replace("-", "").replace(":","")
-        training_size = "_"+str(len(self.training_data))
-        accuracies = str(fscore)+"_"+str(auc)
-                        
-        model_path = "models/"+timestamp+accuracies+training_size+".params"
+        for item in data:
+            label = item[2]
+            if label == "1":
+                fair.append(item)
+            elif label == "0":
+                unfair.append(item)
 
-        torch.save(model.state_dict(), model_path)
-        return model_path
+        # append training data
+        self.append_data(self.training_data_unfair, fair)
+        self.append_data(self.training_data_fair, unfair)
 
-    def get_low_conf_unlabeled(self, model, unlabeled_data, number=80, limit=10000):
-        confidences = []
-        if limit == -1: # we're predicting confidence on *everything* this will take a while
-            print("Get confidences for unlabeled data (this might take a while)")
-        else: 
-            # only apply the model to a limited number of items
-            shuffle(unlabeled_data)
-            unlabeled_data = unlabeled_data[:limit]
+    def _fill_evaluation_data(self):
+        #Keep adding to evaluation data first
+        self.logger.debug("Adding to evaluation data...")
+
+        shuffle(data)
+        needed = self.min_evaluation_items - evaluation_count
+        data = data[:needed]
+        self.logger.debug(f'{needed} more annotations needed')
+
+        data = self._get_annotations(data) 
         
-        with torch.no_grad():
-            for item in unlabeled_data:
-                textid = item[0]
-                if textid in self.already_labeled:
-                    continue
-                item[3] = "random_remaining"
-                text = item[1]
+        fair = []
+        unfair = []
 
-                feature_vector = self.make_feature_vector(text.split(), self.feature_index)
-                log_probs = model(feature_vector)
+        for item in data:
+            label = item[2]    
+            if label == "1":
+                fair.append(item)
+            elif label == "0":
+                unfair.append(item)
 
-                # get confidence that it is related
-                prob_related = math.exp(log_probs.data.tolist()[0][1]) 
-                
-                if prob_related < 0.5:
-                    confidence = 1 - prob_related
-                else:
-                    confidence = prob_related 
+        # append evaluation data 
+        # TODO: implement append method relative to how data is being stored
+        self.append_data(self.evaluation_data_fair, fair)
+        self.append_data(self.evaluation_data_unfair, unfair)
 
-                item[3] = "low confidence"
-                item[4] = confidence
-                confidences.append(item)
+    def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
+        FAIRNESS = ParamType.FAIRNESS.value
+        FAIR     = Label.FAIR.value
+        UNFAIR   = Label.UNFAIR.value
 
-        confidences.sort(key=lambda x: x[4])
-        return confidences[:number:]
+        _select = lambda label : annotated_data[FAIRNESS][FAIRNESS][lambda x : x == label]
+        print('HERE: ', type(annotated_data))
+        annotated_data_fair   = _select(FAIR)
+        annotated_data_unfair = _select(UNFAIR)
 
+        _old_len_fair   = len(self.dataset.training_data_fair)
+        _old_len_unfair = len(self.dataset.training_data_unfair)
+        _m =  'will add annotations:\n'
+        _m += '\t{} fair instances   + {} annotated "fair" instances   = {}  updated fair instance count\n'
+        _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'
+        self.logger.debug(_m.format(
+            _old_len_fair,   len(annotated_data_fair),   _old_len_fair + len(annotated_data_fair),
+            _old_len_unfair, len(annotated_data_unfair), _old_len_fair + len(annotated_data_fair),
+            verbosity = Verbosity.CHATTY
+        ))
+        self.dataset.set_training_data(self.dataset.training_data.index.union(annotated_data.index))
 
-    def get_random_items(self, unlabeled_data, number = 10):
-        shuffle(unlabeled_data)
-
-        random_items = []
-        for item in unlabeled_data:
-            textid = item[0]
-            if textid in self.already_labeled:
-                continue
-            item[3] = "random_remaining"
-            random_items.append(item)
-            if len(random_items) >= number:
-                break
-
-        return random_items
-
-
-    def get_outliers(self, training_data, unlabeled_data, number=10):
-        """Get outliers from unlabeled data in training data
-        Returns number outliers
-        
-        An outlier is defined as the percent of words in an item in 
-        unlabeled_data that do not exist in training_data
-        """
-        outliers = []
-
-        total_feature_counts = defaultdict(lambda: 0)
-        
-        for item in training_data:
-            text = item[1]
-            features = text.split()
-
-            for feature in features:
-                total_feature_counts[feature] += 1
-                    
-        while(len(outliers) < number):
-            top_outlier = []
-            top_match = float("inf")
-
-            for item in unlabeled_data:
-                textid = item[0]
-                if textid in self.already_labeled:
-                    continue
-
-                text = item[1]
-                features = text.split()
-                total_matches = 1 # start at 1 for slight smoothing 
-                for feature in features:
-                    if feature in total_feature_counts:
-                        total_matches += total_feature_counts[feature]
-
-                ave_matches = total_matches / len(features)
-                if ave_matches < top_match:
-                    top_match = ave_matches
-                    top_outlier = item
-
-            # add this outlier to list and update what is 'labeled', 
-            # assuming this new outlier will get a label
-            top_outlier[3] = "outlier"
-            outliers.append(top_outlier)
-            text = top_outlier[1]
-            features = text.split()
-            for feature in features:
-                total_feature_counts[feature] += 1
-
-        return outliers
-        
-
-
-    def evaluate_model(self, model, evaluation_data):
-        """Evaluate the model on the held-out evaluation data
-        Return the f-value for disaster-related and the AUC
-        """
-
-        related_confs = [] # related items and their confidence of being related
-        not_related_confs = [] # not related items and their confidence of being _related_
-
-        true_pos = 0.0 # true positives, etc 
-        false_pos = 0.0
-        false_neg = 0.0
-
-        with torch.no_grad():
-            for item in evaluation_data:
-                _, text, label, _, _, = item
-
-                feature_vector = self.make_feature_vector(text.split(), self.feature_index)
-                log_probs = model(feature_vector)
-
-                # get confidence that item is disaster-related
-                prob_fair = math.exp(log_probs.data.tolist()[0][1]) 
-
-                if(label == "1"):
-                    # true label is disaster related
-                    related_confs.append(prob_fair)
-                    if prob_fair > 0.5:
-                        true_pos += 1.0
-                    else:
-                        false_neg += 1.0
-                else:
-                    # not disaster-related
-                    not_related_confs.append(prob_fair)
-                    if prob_fair > 0.5:
-                        false_pos += 1.0
-
-        # Get FScore
-        if true_pos == 0.0:
-            fscore = 0.0
+    def _get_annotations(self, unlabelled_data: pd.DataFrame) -> pd.DataFrame:
+        if self.config_manager.has_human_in_the_loop:
+            annotated = self._get_annotations_human(unlabelled_data)
         else:
-            precision = true_pos / (true_pos + false_pos)
-            recall = true_pos / (true_pos + false_neg)
-            fscore = (2 * precision * recall) / (precision + recall)
+            annotated = self._get_annotations_auto(unlabelled_data)
+        assert len(set(annotated_data.index).intersection(set(self.dataset.training_data.index))) == 0
+        return annotated
 
-        # GET AUC
-        not_related_confs.sort()
-        total_greater = 0 # count of how many total have higher confidence
-        for conf in related_confs:
-            for conf2 in not_related_confs:
-                if conf < conf2:
-                    break
-                else:                  
-                    total_greater += 1
+    def _get_annotations_auto(self, unlabelled_data: pd.DataFrame) -> pd.DataFrame:
+        # Nothing to do
+        return unlabelled_data
 
-
-        denom = len(not_related_confs) * len(related_confs) 
-        auc = total_greater / denom
-
-        return[fscore, auc]
-
-    def run(self, dataset):
-
-        # TODO: need to split training/evaluation data within the dataset manager
-        # Alternatively, can randomly split a full dataset here based on ratios
-
-        self.training_data = self.dataset_manager.load_data(dataset) 
-        self.training_data_fair = self.dataset_manager.get_fair(training_data)
-        self.training_data_unfair = self.dataset_manager.get_unfair(training_data)
-
-        self.evaluation_data = self.dataset_manager.load_data(dataset)
-        self.evaluation_data_fair = self.dataset_manager.get_fair(evaluation_data)
-        self.evaluation_data_unfair = self.dataset_manager.get_unfair(evaluation_data)
-        
-        self.unlabelled_data = self.dataset_manager.load_data(dataset) # TODO: remove this eventually
-
-        if self.evaluation_count <  self.min_evaluation_items:
-            #Keep adding to evaluation data first
-            self.logger.info("Creating evaluation data:")
-
-            shuffle(data)
-            needed = self.min_evaluation_items - evaluation_count
-            data = data[:needed]
-            self.logger.info(f'{needed} more annotations needed')
-
-            data = self.get_annotations(data) 
-            
-            fair = []
-            unfair = []
-
-            for item in data:
-                label = item[2]    
-                if label == "1":
-                    fair.append(item)
-                elif label == "0":
-                    unfair.append(item)
-
-            # append evaluation data 
-            # TODO: implement append method relative to how data is being stored
-            self.append_data(self.evaluation_data_fair, fair)
-            self.append_data(self.evaluation_data_unfair, unfair)
-
-        elif training_count < self.min_training_items:
-            # lets create our first training data! 
-            print("Creating initial training data:\n")
-
-            shuffle(data)
-            needed = self.min_training_items - training_count
-            data = data[:needed]
-            print(str(needed)+" more annotations needed")
-
-            data = self.get_annotations(data)
-
-            fair = []
-            unfair = []
-
-            for item in data:
-                label = item[2]
-                if label == "1":
-                    fair.append(item)
-                elif label == "0":
-                    unfair.append(item)
-
-            # append training data
-            self.append_data(self.training_data_unfair, fair)
-            self.append_data(self.training_data_fair, unfair)
-        else:
-            # lets start Active Learning!! 
-
-            # Train new model with current training data
-            model_path = self.train_model(training_data, evaluation_data=evaluation_data)
-
-            print("Sampling via Active Learning:\n")
-
-            model = SimpleTextClassifier(2, vocab_size)
-            model.load_state_dict(torch.load(model_path))
-
-            # get 100 items per iteration with the following breakdown of strategies:
-            random_items = self.get_random_items(data, number=10)
-            low_confidences = self.get_low_conf_unlabeled(model, data, number=80)
-            outliers = self.get_outliers(training_data+random_items+low_confidences, data, number=10)
-
-            sampled_data = random_items + low_confidences + outliers
-            shuffle(sampled_data)
-            
-            sampled_data = self.get_annotations(sampled_data)
-            fair = []
-            unfair = []
-            for item in sampled_data:
-                label = item[2]
-                if label == "1":
-                    fair.append(item)
-                elif label == "0":
-                    unfair.append(item)
-
-            # append training data
-            self.append_data(self.training_data_fair, fair)
-            self.append_data(self.training_data_unfair, unfair)
-            
-
-        if training_count > self.min_training_items:
-            print("\nRetraining model with new data")
-            
-            # UPDATE OUR DATA AND (RE)TRAIN MODEL WITH NEWLY ANNOTATED DATA
-            training_data = self.dataset_manager.load_data(self.training_data_fair) + self.dataset_manager.load_data(self.training_data_unfair)
-            training_count = len(training_data)
-
-            evaluation_data = self.dataset_manager.load_data(self.evaluation_data_fair) + self.dataset_manager.load_data(self.evaluation_data_unfair)
-            evaluation_count = len(evaluation_data)
-
-            vocab_size = create_features() # TODO: replace this method
-            model_path = self.train_model(training_data, evaluation_data=evaluation_data, vocab_size=vocab_size)
-            model = SimpleTextClassifier(2, vocab_size)
-            model.load_state_dict(torch.load(model_path))
-
-            accuracies = self.evaluate_model(model, evaluation_data)
-            self.logger.info(f"[fscore, auc] = {accuracies}")
-            self.logger.info(f"Model saved to:  {model_path}")
+    def _get_annotations_human(self) -> pd.DataFrame:
+        # Get annotation data from annotator via command line
+        raise NotImplementedError
 
 if __name__=="__main__":
     main()

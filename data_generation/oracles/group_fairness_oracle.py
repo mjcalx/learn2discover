@@ -2,6 +2,7 @@ import os
 import sys
 import pandas as pd
 from typing import List, Dict
+from data.data_classes import ParamType
 
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 datagen_path = os.path.join(root_path, 'data_generation')
@@ -12,26 +13,26 @@ except ValueError:
 
 from data.data_classes import Label, Outcome
 from data.dataset_manager import DatasetManager
-from abstract_mock_oracle import AbstractMockOracle
+from oracles.abstract_mock_oracle import AbstractMockOracle
 
 class GroupFairnessOracle(AbstractMockOracle):
     def __init__(self, sensitive_attributes: List[str]):
         super(GroupFairnessOracle, self).__init__()
         self.sensitive_attributes = sensitive_attributes
 
-    def set_labels(self) -> pd.Series:
+    def set_labels(self, outcomes: pd.Series) -> pd.Series:
         dataset_manager = DatasetManager.get_instance()
         self.logger.debug("Evaluating fairness...")
         group_fairness = {}
         for attribute in self.sensitive_attributes:
-            group_fairness[attribute] = self._compute_group_fairness(attribute, dataset_manager.schema.get_variable_values(attribute))
+            group_fairness[attribute] = self._compute_group_fairness(outcomes, attribute, dataset_manager.schema.get_variable_values(attribute))
             self.logger.debug(str(group_fairness[attribute]))
 
         normalized = self._calculate_fairness_scores(group_fairness)
-        assign_fairness_label = lambda x : Label.FAIR if x >=0 else Label.UNFAIR
+        assign_fairness_label = lambda x : Label.FAIR.value if x >=0 else Label.UNFAIR.value
         fairness_labels = normalized.apply(assign_fairness_label)
 
-        label_count = lambda label : len(fairness_labels[lambda x : x == label])
+        label_count = lambda label : len(fairness_labels[lambda x : x == label.value])
         fair_count   = label_count(Label.FAIR)
         unfair_count = label_count(Label.UNFAIR)
         self.logger.debug(f"Fair instances: {fair_count}. Unfair instances: {unfair_count}")
@@ -39,13 +40,13 @@ class GroupFairnessOracle(AbstractMockOracle):
 
         return fairness_labels
 
-    def _compute_group_fairness(self, sensitive_attribute: str, possible_values: List[str]):
+    def _compute_group_fairness(self, outcomes: pd.Series, sensitive_attribute: str, possible_values: List[str]):
         """
         Computes the group fairness for a single attribute
         """
         dataset_manager = DatasetManager.get_instance()
-        data_inputs = dataset_manager.X
-        outcomes = dataset_manager.outcomes
+        X = dataset_manager.attributes.inputs
+        data_inputs = dataset_manager.data[X]
         # Store each of the attribute's values and corresponding group fairness in a dictionary
         scores = {category:0 for category in possible_values}
 
@@ -72,5 +73,6 @@ class GroupFairnessOracle(AbstractMockOracle):
         dataset_manager = DatasetManager.get_instance()
         normalized_fairness = self._normalize_group_fairness_score(group_fairness)
         sum_over_normalized = lambda x: sum([normalized_fairness[attr][x[attr]] for attr in self.sensitive_attributes])
-        normalized_fairness_scores = dataset_manager.X.apply(sum_over_normalized, axis=1)
+        X = dataset_manager.attributes.inputs
+        normalized_fairness_scores = dataset_manager.data[X].apply(sum_over_normalized, axis=1)
         return normalized_fairness_scores

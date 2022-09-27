@@ -3,7 +3,6 @@ import pandas as pd
 from data.data_classes import Outcome
 from loggers.logger_factory import LoggerFactory
 
-
 class AbstractMockOracle:
     def __init__(self):
         self.logger = LoggerFactory.get_logger(self._type())

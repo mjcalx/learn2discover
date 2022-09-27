@@ -13,11 +13,11 @@ from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
 from data_generator import DataGenerator
 from system_under_test import SystemUnderTest
-from data_generation.oracles.abstract_mock_oracle import AbstractMockOracle
+from oracles.abstract_mock_oracle import AbstractMockOracle
 
 #################Import SUT and Mock Oracle##############
 from compas.compas_sut import Compas
-from data_generation.oracles.group_fairness_oracle import GroupFairnessOracle
+from oracles.group_fairness_oracle import GroupFairnessOracle
 #########################################################
 
 SUT_TYPE    : SystemUnderTest    = Compas

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Dict
 
+
 class DataAttributes:
     """
     Stores information about the data attributes for a dataset
@@ -31,19 +32,27 @@ class Label(Enum):
     """
     A binary label with values "Fair" and "Unfair"
     """
-    FAIR = True
-    UNFAIR = False
+    FAIR = 'FAIR'
+    UNFAIR = 'UNFAIR'
 
 
 class Outcome(Enum):
     """
     A binary outcome with values "Pass" and "Fail"
     """
-    PASS = True
-    FAIL = False
+    PASS = 'PASS'
+    FAIL = 'FAIL'
+
 
 class ParamType(Enum):
-    INPUTS   = "INPUTS"
-    OUTPUTS  = "OUTPUTS"
-    OUTCOME  = "TEST_OUTCOME"
-    FAIRNESS = "FAIRNESS_LABEL"
+    INPUTS = "INPUTS"
+    OUTPUTS = "OUTPUTS"
+    OUTCOME = "OUTCOME"
+    FAIRNESS = "FAIRNESS"
+
+
+class VarType(Enum):
+    CATEGORICAL = 'categorical'
+    NUMERICAL = 'numerical'
+    DATE = 'date'
+    ID = 'id'

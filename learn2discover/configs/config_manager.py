@@ -71,6 +71,7 @@ class ConfigManager:
         load_fn()
         self.primary_logger_type = self.configs.get('log').get('primary_logger_type')
         self.log_level = self.configs.get('log').get('log_level')
+        self.verbosity = self.configs.get('log').get('verbosity')
 
     def _load_data_gen_configs(self) -> None:
         self.schema_file           = self.configs.get('generator_settings').get('schema_file')
@@ -83,21 +84,36 @@ class ConfigManager:
         assert isinstance(self.index_column_included, bool)
 
     def _load_training_configs(self) -> None:
-        self.schema_file           = self.configs.get('dataset_settings').get('schema_file')
-        self.data_file             = self.configs.get('dataset_settings').get('data_file')
-        self.index_column_included = self.configs.get('dataset_settings').get('index_column_included')
-        self.delimiter             = self.configs.get('dataset_settings').get('delimiter')
+        _section = lambda section : self.configs.get(section)
+        DATASET    = _section('dataset_settings')
+        HYPERPARAM = _section('model_hyperparameters')
+        TRAINING   = _section('training_settings')
+        CRITERION  = TRAINING.get('stopping_criterion')
+        OUTPUT     = _section('output_settings')
 
-        self.model_path          = self.configs.get('output_settings').get('model_path')
-        self.training_path       = self.configs.get('output_settings').get('training_path')
-        self.validation_path     = self.configs.get('output_settings').get('validation_path')
-        self.evaluation_path     = self.configs.get('output_settings').get('evaluation_path')
-        self.unlabelled_path     = self.configs.get('output_settings').get('unlabelled_path')
-        self.fair_csv_filename   = self.configs.get('output_settings').get('fair_csv_filename')
-        self.unfair_csv_filename = self.configs.get('output_settings').get('unfair_csv_filename')
+        self.schema_file           = DATASET.get('schema_file')
+        self.data_file             = DATASET.get('data_file')
+        self.index_column_included = DATASET.get('index_column_included')
+        self.delimiter             = DATASET.get('delimiter')
 
-        self.query_strategies  = self.configs.get('training_settings').get('query_strategies')
+        self.epochs                = HYPERPARAM.get('epochs')
+        self.learning_rate         = HYPERPARAM.get('learning_rate')
+        self.selections_per_epoch  = HYPERPARAM.get('selections_per_epoch')
+        self.dropout_rate          = HYPERPARAM.get('dropout_rate')
+        self.layers                = HYPERPARAM.get('layers')
+
+        self.test_fraction            = TRAINING.get('test_fraction')
+        self.unlabelled_fraction      = TRAINING.get('simulated_unlabelled_fraction')
+        self.min_evaluation_items     = TRAINING.get('min_evaluation_items')
+        self.min_training_items       = TRAINING.get('min_training_items')
+        self.unlabelled_sampling_size = TRAINING.get('unlabelled_sampling_size')
+        self.query_strategy           = TRAINING.get('query_strategy')
+        self.has_human_in_the_loop    = TRAINING.get('has_human_in_the_loop')
+
+        self.stopping_criterion          = CRITERION.get('choice')
+        self.stopping_criterion_settings = CRITERION.get('settings')[self.stopping_criterion]
+
+        self.model_path          = OUTPUT.get('model_path')
 
         assert isinstance(self.column_names_included, bool)
         assert isinstance(self.index_column_included, bool)
-        assert isinstance(self.query_strategies, list)

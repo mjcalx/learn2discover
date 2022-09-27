@@ -1,19 +1,19 @@
 from loggers.logger import Logger
+from utils.logging_utils import Verbosity
 from datetime import datetime
-
 
 class ConsoleLogger(Logger):
 
-    def __init__(self, class_name, log_level):
-        super().__init__(class_name, log_level)
+    def __init__(self, class_name, log_level, verbosity_int):
+        super().__init__(class_name, log_level, verbosity_int)
 
-    def debug(self, message):
-        if self.log_level == 'debug':
+    def debug(self, message, verbosity=Verbosity.BASE):
+        if self.log_level == 'debug' and verbosity.value <= self.verbosity:
             current_datetime = datetime.now()
             self._msg_format('DEBUG',message)
 
-    def info(self, message):
-        if self.log_level == 'info':
+    def info(self, message, verbosity=Verbosity.BASE):
+        if self.log_level in ['info', 'debug'] and verbosity.value <= self.verbosity:
             current_datetime = datetime.now()
             self._msg_format('INFO',message)
 

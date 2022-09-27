@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import List, Dict, Tuple
+from data.data_classes import VarType
 from loggers.logger_factory import LoggerFactory
 from collections import OrderedDict
 from enum import Enum
+from copy import copy
 
 class Schema(OrderedDict):
     """
@@ -16,36 +18,44 @@ class Schema(OrderedDict):
     ERR_MISSING_VALUES_KEY    = 'MissingValuesKey'
     ERR_NON_UNIQUE_VALUES     = 'NonUniqueValues'
     ERR_EMPTY_VALUES          = 'EmptyValues'
-    ERR_BAD_VARIABLE_TYPE     = 'BadVariableType'
+    ERR_BAD_VARIABLE_TYPE     = 'BadVarType'
     ERR_MULTIPLE_OR_NO_LABELS = 'MultipleOrNoLabels'
 
     def __init__(self, parsed_yaml: Dict):
         super(Schema, self).__init__(parsed_yaml)
         self.logger = LoggerFactory.get_logger(__class__.__name__) 
         self.label_key = None
+        self.types = {v:[] for v in VarType}
         self._validate()
-        
     
     def get_type(self, key: str) -> str:
         try:
-            return self[key][self.TYPE_STR]
+            return VarType(self[key][self.TYPE_STR])
         except KeyError:
             self.logger.error(f'KeyError: "{key}" for schema when retrieving type')
             raise
+        except ValueError:
+            return 'BadVarType'
 
     def get_variable_values(self, key: str) -> Tuple:
         """
         Values are strings if categorical; otherwise returns an empty tuple
         """
         try:
-            if self.get_type(key) == VarType.CATEGORICAL:
+            if self.get_type(key) is VarType.CATEGORICAL:
                 return tuple(map(lambda x : str(x), self[key][self.VALUES_STR]))
-            if self.get_type(key) in [i.value for i in list(VarType)]:
+            if self.get_type(key) in VarType:
                 return ()
             raise ValueError
         except KeyError:
             self.logger.error(f'KeyError: "{key}" for schema when retrieving variable values')
             raise
+
+    def vars_by_type(self, vtype: VarType=None) -> Dict[VarType, List[str]]:
+        assert vtype in [*VarType, None]
+        if vtype is None:
+            return self.types.copy()
+        return self.types[vtype].copy()
 
     def get_label_key(self) -> str:
         assert self.label_key is not None
@@ -58,11 +68,12 @@ class Schema(OrderedDict):
             for k in self.keys():
                 var_type = self.get_type(k)
                 # Check categorical values are defined and unique
-                if var_type == VarType.CATEGORICAL.value:
+                if var_type is VarType.CATEGORICAL:
                     self._validate_categories(k)
                 # Check variable type is valid
-                elif var_type not in VarType.values():
+                elif var_type not in VarType:
                     raise ValueError(self.ERR_BAD_VARIABLE_TYPE)
+                self.types[var_type].append(k)
         except ValueError as e:
             msg = ''
             if str(e) == self.ERR_BAD_VARIABLE_TYPE:
@@ -96,20 +107,3 @@ class Schema(OrderedDict):
             return variable_name
         except KeyError:
             self.logger.error(f"KeyError: {variable_name}")
-
-class VarType(Enum):
-    CATEGORICAL = 'categorical'
-    NUMERICAL   = 'numerical'
-    DATE        = 'date'
-    ID          = 'id'
-
-    def __eq__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value == other.value
-        if other.__class__ is str:
-            return self.value == other
-        return NotImplemented
-    
-    @staticmethod
-    def values() -> List[VarType]:
-        return [VarType[v].value for v in VarType.__members__]

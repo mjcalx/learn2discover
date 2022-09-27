@@ -15,6 +15,3 @@ class MockOracle:
 
     def set_labels(self, *args, **kwargs) -> pd.Series:
         pass
-
-    def generate_mock_data(self, outcome_func: Callable[[pd.DataFrame, ...], pd.Series], sensitive_attributes: List[str]) -> pd.DataFrame:
-        pass

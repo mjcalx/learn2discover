@@ -4,7 +4,18 @@ from utils.loader_utils import LoaderUtils
 
 
 class ConfigManager:
-    config_file = 'config.yml'
+    MODE_STR_TRAINING = 'train'
+    MODE_STR_GENERATE = 'generate'
+    
+    CONFIG_FILE_TRAINING = 'config.yml'
+    CONFIG_FILE_GENERATE = '../data_generation/config.yml'
+    # CONFIG_FILE_GENERATE = 'config.yml'
+    MODES = {
+        MODE_STR_TRAINING : CONFIG_FILE_TRAINING, 
+        MODE_STR_GENERATE : CONFIG_FILE_GENERATE
+        }
+
+    config_file = CONFIG_FILE_TRAINING
     schema_file = ''
     data_file = ''
     column_names_included = False
@@ -21,7 +32,16 @@ class ConfigManager:
     primary_logger_type = 'console'
     log_level = 'info'
 
-    def __init__(self, workspace_dir):
+
+    def __init__(self, 
+                 workspace_dir : str, 
+                 mode : str=None,
+                 config_file : str=None):
+        if mode not in ConfigManager.MODES.keys():
+            print(f'Defaulting to "{ConfigManager.MODE_STR_TRAINING}" mode')
+            mode = ConfigManager.MODE_STR_TRAINING
+        self.mode = mode
+        self.config_file = config_file if config_file is not None else ConfigManager.MODES[self.mode]
         if ConfigManager.instance is None:
             ConfigManager.instance = self
         self.workspace_dir = workspace_dir
@@ -44,23 +64,38 @@ class ConfigManager:
         return self.get_yaml_configs(schf)
 
     def load_configs(self):
-        configs = self.get_yaml_configs()
-        self.schema_file           = configs.get('dataset_settings').get('schema_file')
-        self.data_file             = configs.get('dataset_settings').get('data_file')
-        self.index_column_included = configs.get('dataset_settings').get('index_column_included')
-        self.delimiter             = configs.get('dataset_settings').get('delimiter')
+        self.configs = self.get_yaml_configs()
+        load_fn = {
+            ConfigManager.MODE_STR_TRAINING : self._load_training_configs,
+            ConfigManager.MODE_STR_GENERATE : self._load_data_gen_configs
+        }[self.mode]
+        load_fn()
+        self.primary_logger_type = self.configs.get('log').get('primary_logger_type')
+        self.log_level = self.configs.get('log').get('log_level')
 
-        self.model_path          = configs.get('output_settings').get('model_path')
-        self.training_path       = configs.get('output_settings').get('training_path')
-        self.validation_path     = configs.get('output_settings').get('validation_path')
-        self.evaluation_path     = configs.get('output_settings').get('evaluation_path')
-        self.unlabelled_path     = configs.get('output_settings').get('unlabelled_path')
-        self.fair_csv_filename   = configs.get('output_settings').get('fair_csv_filename')
-        self.unfair_csv_filename = configs.get('output_settings').get('unfair_csv_filename')
+    def _load_data_gen_configs(self) -> None:
+        self.schema_file           = self.configs.get('dataset_settings').get('schema_file')
+        self.data_file             = self.configs.get('dataset_settings').get('data_file')
+        self.index_column_included = self.configs.get('dataset_settings').get('index_column_included')
+        self.delimiter             = self.configs.get('dataset_settings').get('delimiter')
 
-        self.query_strategies  = configs.get('training_settings').get('query_strategies')
-        self.primary_logger_type = configs.get('log').get('primary_logger_type')
-        self.log_level = configs.get('log').get('log_level')
+        assert isinstance(self.index_column_included, bool)
+
+    def _load_training_configs(self) -> None:
+        self.schema_file           = self.configs.get('dataset_settings').get('schema_file')
+        self.data_file             = self.configs.get('dataset_settings').get('data_file')
+        self.index_column_included = self.configs.get('dataset_settings').get('index_column_included')
+        self.delimiter             = self.configs.get('dataset_settings').get('delimiter')
+
+        self.model_path          = self.configs.get('output_settings').get('model_path')
+        self.training_path       = self.configs.get('output_settings').get('training_path')
+        self.validation_path     = self.configs.get('output_settings').get('validation_path')
+        self.evaluation_path     = self.configs.get('output_settings').get('evaluation_path')
+        self.unlabelled_path     = self.configs.get('output_settings').get('unlabelled_path')
+        self.fair_csv_filename   = self.configs.get('output_settings').get('fair_csv_filename')
+        self.unfair_csv_filename = self.configs.get('output_settings').get('unfair_csv_filename')
+
+        self.query_strategies  = self.configs.get('training_settings').get('query_strategies')
 
         assert isinstance(self.column_names_included, bool)
         assert isinstance(self.index_column_included, bool)

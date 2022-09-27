@@ -40,3 +40,5 @@ if __name__=="__main__":
 
     data_generator = DataGenerator(sut, oracle)
     dataset = data_generator.generate_data()
+
+    dataset.to_csv(config.output_csv)

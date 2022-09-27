@@ -27,6 +27,6 @@ class DataGenerator:
 
         fairness_labels = self._oracle.set_labels()
         self._dataset_manager.set_fairness_labels(fairness_labels)
-        
+
         self.logger.debug("...done.")
         return self._dataset_manager.format_dataset()

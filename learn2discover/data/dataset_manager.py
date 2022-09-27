@@ -2,16 +2,12 @@ from __future__ import annotations
 import numpy as np
 from data.schema import Schema
 from data.loader import Loader
-from data.data_classes import DataAttributes, Label, Outcome
+from data.data_classes import DataAttributes, Label, Outcome, ParamType
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 import pandas as pd
 
 class DatasetManager:
-    INPUTS_LVL_STR   = "inputs"
-    OUTPUTS_LVL_STR  = "outputs"
-    OUTCOME_LVL_STR  = "outcome"
-    FAIRNESS_LVL_STR = "fairness_label"
     instance = None
 
     def __init__(self, attributes: DataAttributes=None, random_state: int=42):
@@ -56,7 +52,7 @@ class DatasetManager:
         assert len(self.outcomes) == len(self.X), n
 
         self.outcomes = outcomes
-        self.outcomes.rename('outcome', inplace=True)
+        self.outcomes.rename(ParamType.OUTCOME.value, inplace=True)
 
     def set_fairness_labels(self, fairness_labels: pd.Series) -> None:
         m = '"fairness_labels" must be of type Series[Label]'
@@ -65,7 +61,7 @@ class DatasetManager:
         assert len(self.fairness_labels) == len(self.X), n
 
         self.fairness_labels = fairness_labels
-        self.fairness_labels.rename(DatasetManager.FAIRNESS_LVL_STR, inplace=True)
+        self.fairness_labels.rename(ParamType.FAIRNESS.value, inplace=True)
 
     def format_dataset(self) -> pd.DataFrame:
         """
@@ -82,9 +78,9 @@ class DatasetManager:
 
         df = pd.concat([self.data, self.outcomes, self.fairness_labels], axis=1)
         levels = [
-                *[DatasetManager.INPUTS_LVL_STR]*len(self.attributes.inputs), 
-                *[DatasetManager.OUTPUTS_LVL_STR]*len(self.attributes.outputs), 
-                DatasetManager.OUTCOME_LVL_STR, DatasetManager.FAIRNESS_LVL_STR]
+                *[ParamType.INPUTS.value]*len(self.attributes.inputs), 
+                *[ParamType.OUTPUTS.value]*len(self.attributes.outputs), 
+                ParamType.OUTCOME.value, ParamType.FAIRNESS.value]
         codes = [*self.attributes.inputs, *self.attributes.outputs, 
                 self.outcomes.name, self.fairness_labels.name]
         assert len(levels) == len(codes)

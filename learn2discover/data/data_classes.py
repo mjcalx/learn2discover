@@ -41,3 +41,9 @@ class Outcome(Enum):
     """
     PASS = True
     FAIL = False
+
+class ParamType(Enum):
+    INPUTS   = "inputs"
+    OUTPUTS  = "outputs"
+    OUTCOME  = "outcome"
+    FAIRNESS = "fairness_label"

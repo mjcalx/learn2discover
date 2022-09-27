@@ -6,8 +6,8 @@ training_settings:
 
 dataset_settings:
   schema_file: ../datasets/schemas/schema_compas.yml
-  data_file: ../datasets/original/COMPAS/compas-scores-raw.csv
-  index_column_included: false
+  data_file: ../datasets/generated/compas.csv
+  index_column_included: true
   delimiter: ','
 
 output_settings:
@@ -18,7 +18,6 @@ output_settings:
   unlabelled_path: data/german/unlabelled_data
   fair_csv_filename: fair.csv
   unfair_csv_filename: unfair.csv
-
 
 log:
   primary_logger_type: console

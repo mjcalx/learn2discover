@@ -20,13 +20,14 @@ class CompasOracle(MockOracle):
         self.sensitive_attributes = sensitive_attributes
 
     def set_labels(self) -> pd.Series:
+        dataset_manager = DatasetManager.get_instance()
         self.logger.debug("Evaluating fairness...")
         group_fairness = {}
         for attribute in self.sensitive_attributes:
-            group_fairness[attribute] = self._compute_group_fairness(attribute, self.datamgr.schema.get_variable_values(attribute), self.datamgr)
+            group_fairness[attribute] = self._compute_group_fairness(attribute, dataset_manager.schema.get_variable_values(attribute))
             self.logger.debug(str(group_fairness[attribute]))
 
-        normalized = self._calculate_fairness_scores(group_fairness, self.datamgr)
+        normalized = self._calculate_fairness_scores(group_fairness)
         assign_fairness_label = lambda x : Label.FAIR if x >=0 else Label.UNFAIR
         fairness_labels = normalized.apply(assign_fairness_label)
 
@@ -34,16 +35,17 @@ class CompasOracle(MockOracle):
         fair_count   = label_count(Label.FAIR)
         unfair_count = label_count(Label.UNFAIR)
         self.logger.debug(f"Fair instances: {fair_count}. Unfair instances: {unfair_count}")
-        self.logger.debug(f"Fair instances %: {fair_count / len(self.datamgr.data)}%. Unfair instances %: {unfair_count / len(self.datamgr.data)}%")
+        self.logger.debug(f"Fair instances %: {fair_count / len(dataset_manager.data)}%. Unfair instances %: {unfair_count / len(dataset_manager.data)}%")
 
         return fairness_labels
 
-    def _compute_group_fairness(self, sensitive_attribute: str, possible_values: List[str], dmgr: DatasetManager):
+    def _compute_group_fairness(self, sensitive_attribute: str, possible_values: List[str]):
         """
         Computes the group fairness for a single attribute
         """
-        data_inputs = dmgr.X
-        outcomes = dmgr.outcomes
+        dataset_manager = DatasetManager.get_instance()
+        data_inputs = dataset_manager.X
+        outcomes = dataset_manager.outcomes
         # Store each of the attribute's values and corresponding group fairness in a dictionary
         scores = {category:0 for category in possible_values}
 
@@ -66,8 +68,9 @@ class CompasOracle(MockOracle):
         normalized_fairness = {key:group_fairness[key].apply(lambda x: x - means[key])  for key in group_fairness.keys()}
         return normalized_fairness
 
-    def _calculate_fairness_scores(self, group_fairness: Dict[str, float], dmgr: DatasetManager):
+    def _calculate_fairness_scores(self, group_fairness: Dict[str, float]):
+        dataset_manager = DatasetManager.get_instance()
         normalized_fairness = self._normalize_group_fairness_score(group_fairness)
         sum_over_normalized = lambda x: sum([normalized_fairness[attr][x[attr]] for attr in self.sensitive_attributes])
-        normalized_fairness_scores = dmgr.X.apply(sum_over_normalized, axis=1)
+        normalized_fairness_scores = dataset_manager.X.apply(sum_over_normalized, axis=1)
         return normalized_fairness_scores

@@ -14,7 +14,7 @@ class DatasetManager:
     FAIRNESS_LVL_STR = "fairness_label"
     instance = None
 
-    def __init__(self, random_state: int=42, attributes: DataAttributes=None):
+    def __init__(self, attributes: DataAttributes=None, random_state: int=42):
         """_summary_
         Args:
             random_state (int, optional): random seed. Defaults to 42.

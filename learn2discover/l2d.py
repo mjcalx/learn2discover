@@ -1,11 +1,7 @@
 import os
 import sys
 import traceback
-from configs.config_manager import ConfigManager
-from utils.logging_utils import LoggingUtils
-from loggers.logger_factory import LoggerFactory
-from data.dataset_manager import DatasetManager
-from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
+import pandas as pd
 
 import torch
 import torch.nn as nn
@@ -33,7 +29,8 @@ from utils.logging_utils import LoggingUtils
 from loggers.logger_factory import LoggerFactory
 from data.schema import VarType
 from data.dataset_manager import DatasetManager
-from data.data_classes import ParamType
+from data.data_classes import ParamType, Label
+from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 
 def main():
     learn_to_discover = Learn2Discover()
@@ -56,6 +53,8 @@ class Learn2Discover:
             self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
 
             # Constants
+            self.test_fraction = 0.2
+            return
             self.min_evaluation_items = 200
             self.min_training_items = 50
             self.epochs = 10
@@ -325,12 +324,20 @@ class Learn2Discover:
 
         return[fscore, auc]
 
-    def run(self, dataset):
+    def run(self):
 
         # TODO: need to split training/evaluation data within the dataset manager
         # Alternatively, can randomly split a full dataset here based on ratios
+        data = self.dataset_manager.data
+        tensor_data = self.dataset_manager.tensor_data
+        self.logger.debug(f'{len(data)} instances loaded.')
 
-        self.training_data = self.dataset_manager.load_data(dataset) 
+        train_idxs, test_idxs = self.dataset_manager.split_dataset(self.test_fraction)
+        training_data = tensor_data.loc(train_idxs)
+        test_data = tensor_data.loc(test_idxs)
+
+        print(data.fairness_labels)
+        data.fairness_labels[Label.FAIR]
         self.training_data_fair = self.dataset_manager.get_fair(training_data)
         self.training_data_unfair = self.dataset_manager.get_unfair(training_data)
 

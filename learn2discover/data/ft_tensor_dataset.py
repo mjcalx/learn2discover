@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import pandas as pd
+from typing import Tuple
 
 from loggers.logger_factory import LoggerFactory
 from data.ft_dataframe_dataset import FTDataFrameDataset
@@ -16,8 +17,14 @@ class FTTensorDataset:
         self._tensors = {pt:_vardict() for pt in ParamType}  # Dict of VarTypes per ParamType
         self._make_tensors()
 
-        self._make_categorical_tensors()
-    
+    def loc(self, idxs: pd.Index) -> Tuple[torch.Tensor, torch.Tensor]:
+        _get_categorical = lambda idxs : self._tensors[ParamType.INPUTS][VarType.CATEGORICAL][idxs]
+        _get_numerical = lambda idxs : self._tensors[ParamType.INPUTS][VarType.NUMERICAL][idxs]
+        tensors = (_get_categorical(idxs), _get_numerical(idxs))
+        msg = "tensors of size {} (categorical) and {} (numerical) retrieved"
+        self.logger.debug(msg.format(tensors[0].size(), tensors[1].size()))
+        return tensors
+
     def _make_categorical_tensors(self) -> None:
         """_summary_
         Apply a tensor transformation on the categorical input data and store a

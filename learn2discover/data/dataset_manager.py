@@ -109,6 +109,14 @@ class DatasetManager:
         self._ftdata = FTDataFrameDataset(self.schema, self.data)
         return self.data
 
-    def split_dataset() -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        pass
+    def split_dataset(self, test_fraction: float) -> (pd.Index, pd.Index):
+        data = self.data.dataset
+        test_record_count = int(len(data) * test_fraction)
+        train_record_count = len(data) - test_record_count
+        test_idxs = pd.Index(self.random.choice(len(data), test_record_count, replace=False))
+        train_idxs = data.loc[~data.index.isin(test_idxs)].index
+
+        assert len(test_idxs) + len(train_idxs) == len(data)
+        return train_idxs, test_idxs
+
         

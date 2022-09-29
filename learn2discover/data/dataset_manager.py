@@ -17,14 +17,13 @@ from utils.validation_utils import ValidationUtils
 class DatasetManager:
     instance = None
 
-    def __init__(self, attributes: DataAttributes=None, random_state: int=42):
+    def __init__(self, attributes: DataAttributes=None, seed: int=42):
         """_summary_
         Args:
             random_state (int, optional): random seed. Defaults to 42.
         """
+        self.random = np.random.RandomState(seed)
         self.logger = LoggerFactory.get_logger(__class__.__name__)
-        self.random = np.random.RandomState(random_state)
-
         self._ftdata = None
         self._attributes = attributes
         
@@ -44,12 +43,9 @@ class DatasetManager:
             DatasetManager.instance = DatasetManager()
         return DatasetManager.instance
     
-    def columns_by_type(self, variable_type=None) -> Dict[VarType, list]:
-        assert type(variable_type) in [VarType, type(None)]
-        self.schema.vars_by_type(variable_type)
-        if variable_type is None:
-            return self.schema.vars_by_type()
-        return self.schema.vars_by_type(variable_type)
+    @property
+    def tensor_data(self) -> TorchDataset | None:
+        return self._tensors if self.in_training else None
 
     @property
     def data(self) -> FTDataFrameDataset | pd.DataFrame:
@@ -64,6 +60,16 @@ class DatasetManager:
     @property
     def attributes(self) -> DataAttributes:
         return self._attributes
+
+    def columns_by_type(self, variable_type=None) -> Dict[VarType, list]:
+        assert type(variable_type) in [VarType, type(None)]
+        self.schema.vars_by_type(variable_type)
+        if variable_type is None:
+            return self.schema.vars_by_type()
+        return self.schema.vars_by_type(variable_type)
+
+    def get_variable_values(self, variable_name: str) -> Tuple[str]:
+        return self.schema.get_variable_values(variable_name)
 
     def get_fairness_testing_dataset(self, outcomes: pd.Series, fairness_labels: pd.Series) -> FTDataFrameDataset:
         """

@@ -4,6 +4,7 @@ from data.data_classes import VarType
 from loggers.logger_factory import LoggerFactory
 from collections import OrderedDict
 from enum import Enum
+from copy import copy
 
 class Schema(OrderedDict):
     """
@@ -24,6 +25,7 @@ class Schema(OrderedDict):
         super(Schema, self).__init__(parsed_yaml)
         self.logger = LoggerFactory.get_logger(__class__.__name__) 
         self.label_key = None
+        self.types = {v:[] for v in VarType}
         self._validate()
     
     def get_type(self, key: str) -> str:
@@ -49,6 +51,12 @@ class Schema(OrderedDict):
             self.logger.error(f'KeyError: "{key}" for schema when retrieving variable values')
             raise
 
+    def vars_by_type(self, vtype: VarType=None) -> Dict[VarType, List[str]]:
+        assert vtype in [*VarType, None]
+        if vtype is None:
+            return self.types.copy()
+        return self.types[vtype].copy()
+
     def get_label_key(self) -> str:
         assert self.label_key is not None
         return self.label_key
@@ -65,6 +73,7 @@ class Schema(OrderedDict):
                 # Check variable type is valid
                 elif var_type not in VarType:
                     raise ValueError(self.ERR_BAD_VARIABLE_TYPE)
+                self.types[var_type].append(k)
         except ValueError as e:
             msg = ''
             if str(e) == self.ERR_BAD_VARIABLE_TYPE:
@@ -98,5 +107,3 @@ class Schema(OrderedDict):
             return variable_name
         except KeyError:
             self.logger.error(f"KeyError: {variable_name}")
-
-

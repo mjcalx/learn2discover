@@ -4,7 +4,7 @@ import pandas as pd
 import itertools
 
 from data.schema import Schema
-from data.data_classes import ParamType, VarType, DataAttributes
+from data.data_classes import ParamType, VarType, DataAttributes, Label
 from utils.validation_utils import ValidationUtils
 
 class FTDataFrameDataset:
@@ -20,25 +20,34 @@ class FTDataFrameDataset:
 
         self.attributes = None
         self.attribute_data = None
-
         # ParamTypes are derived from MultiIndex level 0
         idxs = [self.dataset[x].columns for x in [ParamType.INPUTS.value, ParamType.OUTPUTS.value]]
-        attribute_index = pd.Index(list(itertools.chain(*idxs)))
+        self._attribute_index = pd.Index(list(itertools.chain(*idxs)))
         inputs, outputs = [list(x) for x in idxs]
         self.attributes = DataAttributes(inputs, outputs)
         assert self.attributes is not None
-
-        self.attribute_data = self.dataset.droplevel(0, axis=1)[attribute_index]
+        self._preprocess_categorical_variables()
+        self._reassign_attribute_data()
         # TODO cast to types
 
-        self._preprocess_categorical_variables()
-
+    def __len__(self):
+        return len(self.dataset)
 
     # def filter(self, fn: Callable[[pd.DataFrame], pd.DataFrame], **args) -> pd.DataFrame:
     #     """
     #     Function must be applicable to a multiindexed DataFrame
     #     """
     #     return fn(self.dataset)
+
+    def set_attribute_column(self, column_name: str, new_column: pd.Series):
+        assert isinstance(new_column, pd.Series), 'column must be of type pandas.Series'
+        assert column_name in self.attribute_data.columns, 'column to replace must exist'
+        assert len(new_column) > len(self.dataset), 'column must be same length as data'
+        if column_name in self._categorical_variables():
+            self._preprocess_categorical_variables(new_column)
+        else:
+            self.dataset.loc(axis=1)[:, column_name] = new_column
+        self._reassign_attribute_data() # re-assign single-indexed df
 
     @property
     def X(self) -> pd.DataFrame:
@@ -61,18 +70,25 @@ class FTDataFrameDataset:
         ValidationUtils.validate_outcomes_series(outcomes)
 
         outcomes.rename(ParamType.OUTCOME.value, inplace=True)
-        self.dataset[ParamType.OUTCOME.value][ParamType.OUTCOME.value] = outcomes
+        self.dataset[ParamType.OUTCOME.value,ParamType.OUTCOME.value] = outcomes
 
     @fairness_labels.setter
     def fairness_labels(self, fairness_labels: pd.Series) -> None:
         ValidationUtils.validate_fairness_labels_series(fairness_labels)
 
         fairness_labels.rename(ParamType.FAIRNESS.value, inplace=True)
-        self.dataset[ParamType.FAIRNESS.value][ParamType.FAIRNESS.value] = fairness_labels
+        self.dataset[ParamType.FAIRNESS.value,ParamType.FAIRNESS.value] = fairness_labels
 
-    def _preprocess_categorical_variables(self) -> None:
-        _cat_cols = self.schema.vars_by_type(VarType.CATEGORICAL)
-        for cname in _cat_cols:
-            self.attribute_data[cname] = self.attribute_data[cname].astype('category')
+    def _categorical_variables(self):
+        return self.schema.vars_by_type(VarType.CATEGORICAL)
+
+    def _reassign_attribute_data(self):
+        self.attribute_data = self.dataset.droplevel(0, axis=1)[self._attribute_index]
+
+    def _preprocess_categorical_variables(self, series: pd.Series=None) -> None:
+        if series is not None:
+            assert series.name in self.attribute_data.columns
+            self.dataset.loc(axis=1)[:, series.name] = series.astype('category')
+            return
+        for cname in self._categorical_variables():
             self.dataset.loc(axis=1)[:, cname] = self.dataset.loc(axis=1)[:, cname].astype('category')
-

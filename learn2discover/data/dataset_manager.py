@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from itertools import chain
-from data.schema import Schema
+from data.schema import Schema, VarType
 from data.loader import Loader
 from data.data_classes import DataAttributes, Label, Outcome, ParamType
 from loggers.logger_factory import LoggerFactory

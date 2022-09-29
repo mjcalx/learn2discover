@@ -47,3 +47,9 @@ class ParamType(Enum):
     OUTPUTS  = "OUTPUTS"
     OUTCOME  = "TEST_OUTCOME"
     FAIRNESS = "FAIRNESS_LABEL"
+
+class VarType(Enum):
+    CATEGORICAL = 'categorical'
+    NUMERICAL   = 'numerical'
+    DATE        = 'date'
+    ID          = 'id'

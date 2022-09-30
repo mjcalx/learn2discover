@@ -88,6 +88,18 @@ class ConfigManager:
         self.index_column_included = self.configs.get('dataset_settings').get('index_column_included')
         self.delimiter             = self.configs.get('dataset_settings').get('delimiter')
 
+        self.epochs                = self.configs.get('model_hyperparameters').get('epochs')
+        self.learning_rate         = self.configs.get('model_hyperparameters').get('learning_rate')
+        self.selections_per_epoch  = self.configs.get('model_hyperparameters').get('selections_per_epoch')
+        self.dropout_rate          = self.configs.get('model_hyperparameters').get('dropout_rate')
+        self.num_layers            = self.configs.get('model_hyperparameters').get('num_layers')
+
+        self.test_fraction         = self.configs.get('training_settings').get('test_fraction')
+        self.min_evaluation_items  = self.configs.get('training_settings').get('min_evaluation_items')
+        self.min_training_items    = self.configs.get('training_settings').get('min_training_items')
+        self.has_human_in_the_loop = self.configs.get('training_settings').get('has_human_in_the_loop')
+        self.query_strategies      = self.configs.get('training_settings').get('query_strategies')
+
         self.model_path          = self.configs.get('output_settings').get('model_path')
         self.training_path       = self.configs.get('output_settings').get('training_path')
         self.validation_path     = self.configs.get('output_settings').get('validation_path')
@@ -96,7 +108,6 @@ class ConfigManager:
         self.fair_csv_filename   = self.configs.get('output_settings').get('fair_csv_filename')
         self.unfair_csv_filename = self.configs.get('output_settings').get('unfair_csv_filename')
 
-        self.query_strategies  = self.configs.get('training_settings').get('query_strategies')
 
         assert isinstance(self.column_names_included, bool)
         assert isinstance(self.index_column_included, bool)

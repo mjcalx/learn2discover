@@ -1,8 +1,19 @@
 sut_settings:
   model_path: models
 
+model_hyperparameters:
+  epochs: 10
+  learning_rate: 0.01
+  selections_per_epoch: 40
+  dropout_rate: 0.5
+  num_layers: 1
+
 training_settings:
+  test_fraction: 0.2
+  min_evaluation_items: 200
+  min_training_items: 50
   query_strategies: [entropy, least_confidence, margin_sampling]
+  has_human_in_the_loop: false
 
 dataset_settings:
   schema_file: ../datasets/schemas/schema_compas.yml

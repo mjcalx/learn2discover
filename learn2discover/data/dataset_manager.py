@@ -110,7 +110,8 @@ class DatasetManager:
         return self.data
 
     def split_dataset(self, test_fraction: float) -> (pd.Index, pd.Index):
-        data = self.data.dataset
+        assert self.in_training
+        data = self.data.all_columns()
         test_record_count = int(len(data) * test_fraction)
         train_record_count = len(data) - test_record_count
         test_idxs = pd.Index(self.random.choice(len(data), test_record_count, replace=False))
@@ -119,4 +120,8 @@ class DatasetManager:
         assert len(test_idxs) + len(train_idxs) == len(data)
         return train_idxs, test_idxs
 
-        
+    def shuffle(self, data: pd.DataFrame) -> pd.DataFrame: 
+        _lst_idxs = list(data.index)
+        self.random.shuffle(_lst_idxs)
+        return data.loc[pd.Index(_lst_idxs)]
+

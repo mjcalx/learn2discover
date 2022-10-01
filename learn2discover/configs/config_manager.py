@@ -93,7 +93,7 @@ class ConfigManager:
         self.learning_rate         = self.configs.get('model_hyperparameters').get('learning_rate')
         self.selections_per_epoch  = self.configs.get('model_hyperparameters').get('selections_per_epoch')
         self.dropout_rate          = self.configs.get('model_hyperparameters').get('dropout_rate')
-        self.num_layers            = self.configs.get('model_hyperparameters').get('num_layers')
+        self.layers                = self.configs.get('model_hyperparameters').get('layers')
 
         self.test_fraction         = self.configs.get('training_settings').get('test_fraction')
         self.min_evaluation_items  = self.configs.get('training_settings').get('min_evaluation_items')

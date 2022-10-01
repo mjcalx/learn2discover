@@ -2,11 +2,11 @@ sut_settings:
   model_path: models
 
 model_hyperparameters:
-  epochs: 10
-  learning_rate: 0.01
+  epochs: 50
+  learning_rate: 0.1
   selections_per_epoch: 40
   dropout_rate: 0.5
-  num_layers: 1
+  layers: [200, 100, 50]
 
 training_settings:
   test_fraction: 0.2
@@ -33,3 +33,4 @@ output_settings:
 log:
   primary_logger_type: console
   log_level: debug
+  verbosity: 0

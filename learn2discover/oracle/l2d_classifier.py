@@ -10,7 +10,7 @@ from loggers.logger_factory import LoggerFactory
 
 
 class L2DClassifier(nn.Module):
-    def __init__(self, embedding_size, num_numerical_cols, layers):
+    def __init__(self, embedding_size, num_numerical_cols):
         super(L2DClassifier, self).__init__()
         cfg = ConfigManager.get_instance()
         self.datamgr = DatasetManager.get_instance()
@@ -19,7 +19,7 @@ class L2DClassifier(nn.Module):
         self.epochs = cfg.epochs
         self.learning_rate = cfg.learning_rate
         self.selections_per_epoch = cfg.selections_per_epoch
-        self.num_layers = cfg.num_layers
+        self.layers = cfg.layers
         self.dropout_rate = cfg.dropout_rate
 
         self.embeddings = nn.ModuleList([nn.Embedding(ni, nf) for ni, nf in embedding_size])

@@ -51,10 +51,6 @@ class Learn2Discover:
             self.dataset_manager = DatasetManager()
             self.logger.debug('Loaded DatasetManager.')
             
-            _tensor_data = self.dataset_manager.tensor_data
-            embedding_sizes = _tensor_data.categorical_embedding_sizes
-            numerical_data = _tensor_data.tensors(VarType.NUMERICAL)
-            self.classifier = L2DClassifier(embedding_sizes, numerical_data[1].shape[1], [200, 100, 50])
             self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
             
             self.test_fraction = self.config_manager.test_fraction
@@ -207,10 +203,10 @@ class Learn2Discover:
         # test_data = tensor_data.loc(test_idxs)
 
         _index_fn = lambda index_obj, label : df.loc[index_obj][FAIRNESS][lambda x : x[FAIRNESS] == label].index
-        # self.training_data   = df.loc[train_idxs]
+        self.training_data   = df.loc[train_idxs]
         self.evaluation_data = df.loc[test_idxs]
-        # self.training_data_fair   = df.loc[_index_fn(train_idxs, FAIR)]
-        # self.training_data_unfair = df.loc[_index_fn(train_idxs, UNFAIR)]
+        self.training_data_fair   = df.loc[_index_fn(train_idxs, FAIR)]
+        self.training_data_unfair = df.loc[_index_fn(train_idxs, UNFAIR)]
         self.evaluation_data_fair   = df.loc[_index_fn(test_idxs, FAIR)]
         self.evaluation_data_unfair = df.loc[_index_fn(test_idxs, UNFAIR)]
         self.evaluation_count = len(self.evaluation_data_fair) + len(self.evaluation_data_unfair)
@@ -281,15 +277,23 @@ class Learn2Discover:
             # lets start Active Learning!! 
 
             # Train new model with current training data
-            d = self.dataset_manager.data
-            # print(d.X.loc[train_idxs])
-            # print(d.Y.loc[train_idxs])
-            model_path = self.classifier.fit(self.training_data)
+
+            # CLASSIFIER
+            _tensor_data = self.dataset_manager.tensor_data
+            embedding_sizes = _tensor_data.categorical_embedding_sizes
+            numerical_data = _tensor_data.get_tensors_of_type(VarType.NUMERICAL)
+            self.classifier = L2DClassifier(embedding_sizes, numerical_data.shape[1])
+            # CLASSIFIER
+            
+            # Training
+            self.classifier.fit(train_idxs)
+
+            # Evaluation
+            fscore, auc = self.classifier.evaluate_model(test_idxs)
+            model_path = self.classifier.save_model(fscore, auc)
 
             self.logger.debug("Sampling via Active Learning:\n")
-
-            model = SimpleTextClassifier(2, vocab_size)
-            model.load_state_dict(torch.load(model_path))
+            self.classifier.load_state_dict(torch.load(model_path))
 
             # get 100 items per iteration with the following breakdown of strategies:
             random_items = self.get_random_items(data, number=10)
@@ -310,6 +314,7 @@ class Learn2Discover:
                     unfair.append(item)
 
             # append training data
+            # todo indexes instead?
             self.append_data(self.training_data_fair, fair)
             self.append_data(self.training_data_unfair, unfair)
             

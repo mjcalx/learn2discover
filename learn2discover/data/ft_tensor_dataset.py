@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import pandas as pd
-from typing import Tuple
+from typing import Dict, Tuple
 
 from loggers.logger_factory import LoggerFactory
 from data.ft_dataframe_dataset import FTDataFrameDataset
@@ -16,25 +16,42 @@ class FTTensorDataset:
         # _vardict = lambda : {v:None for v in [VarType.CATEGORICAL, VarType.NUMERICAL]}
         # self._tensors = {pt:_vardict() for pt in ParamType}  # Dict of VarTypes per ParamType
         self._tensors = {v:None for v in [VarType.CATEGORICAL, VarType.NUMERICAL]}
+        self.labels = torch.tensor(self._ftdata.fairness_labels.cat.codes.values, dtype=torch.int64)
         self._make_tensors()
 
-        cat_cols = self._tensors[VarType.CATEGORICAL][0]
         col_size = lambda col : len(self._ftdata.flat_index()[col].cat.categories)
-        self.categorical_column_sizes = [col_size(col) for col in cat_cols]
-        self.logger.debug(f'Column value sizes: {list(zip(cat_cols,self.categorical_column_sizes))}')
+        self.categorical_column_sizes = [col_size(col) for col in self.categorical_columns]
+        self.logger.debug(f'Column value sizes: {list(zip(self.categorical_columns,self.categorical_column_sizes))}', verbosity=2)
         self.categorical_embedding_sizes = [(col_size, min(50, (col_size+1)//2)) for col_size in self.categorical_column_sizes]
-        self.logger.debug(f'Categorical embedding sizes: {self.categorical_embedding_sizes}')
+        self.logger.debug(f'Categorical embedding sizes: {self.categorical_embedding_sizes}', verbosity=2)
 
-    def loc(self, idxs: pd.Index) -> Tuple[torch.Tensor, torch.Tensor]:
-        _get_categorical = lambda idxs : self._tensors[VarType.CATEGORICAL][idxs]
-        _get_numerical = lambda idxs : self._tensors[VarType.NUMERICAL][idxs]
-        tensors = (_get_categorical(idxs), _get_numerical(idxs))
+    @property
+    def categorical_columns(self):
+        return self._tensors[VarType.CATEGORICAL][0]
+    
+    @property
+    def numerical_columns(self):
+        return self._tensors[VarType.NUMERICAL][0]
+
+    def loc(self, idxs: pd.Index) -> Dict[VarType, torch.Tensor]:
+        c = VarType.CATEGORICAL
+        n = VarType.NUMERICAL
+
+        _get_categorical = lambda idxs : self.get_tensors_of_type[c][1][idxs]
+        _get_numerical = lambda idxs : self.get_tensors[n][1][idxs]
+        tensors = {
+            c:self.get_tensors_of_type(c)[idxs], 
+            n:self.get_tensors_of_type(n)[idxs]
+        }
+
         msg = "tensors of size {} (categorical) and {} (numerical) retrieved"
-        self.logger.debug(msg.format(tensors[0].size(), tensors[1].size()))
+        self.logger.debug(msg.format(tensors[c].size(), tensors[n].size()), verbosity=1)
+        self.logger.debug(f'{tensors[c]}, {tensors[n]}',verbosity=2)
+
         return tensors
     
-    def tensors(self, vartype: VarType) -> Tuple[pd.Index, torch.Tensor]:
-        return self._tensors[vartype]
+    def get_tensors_of_type(self, vartype: VarType) -> torch.Tensor:
+        return self._tensors[vartype][1]
 
     def _make_categorical_tensors(self) -> None:
         """_summary_

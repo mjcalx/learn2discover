@@ -1,11 +1,24 @@
+import os
+import re
+import datetime
+import numpy as np
 import pandas as pd
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import matplotlib.pyplot as plt
+import sklearn
+from sklearn.metrics import (
+    classification_report, confusion_matrix, accuracy_score, roc_curve, 
+    roc_auc_score, precision_score, recall_score, f1_score
+)
+from typing import List
+from pathlib import Path
 
 from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
-from data.data_classes import ParamType, Label
+from data.data_classes import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
 
 
@@ -24,43 +37,22 @@ class L2DClassifier(nn.Module):
 
         self.embeddings = nn.ModuleList([nn.Embedding(ni, nf) for ni, nf in embedding_size])
         self.embedding_dropout = nn.Dropout(self.dropout_rate)
-        self.batch_norm = nn.BatchNorm1d(num_numerical_cols)
-        self.layers = layers
+        self.batch_norm_num = nn.BatchNorm1d(num_numerical_cols)
 
         self.stack = None
-        self._build(len_input=len(self.datamgr.attributes.inputs))
+        _td = self.datamgr.tensor_data
+        num_categorical_cols = sum([nf for ni, nf in embedding_size])
+        self._build(len_input=num_categorical_cols+len(_td.numerical_columns))
+        self.logger.debug(f'NUM COLUMNS: CAT {len(_td.categorical_columns)}, NUM {len(_td.numerical_columns)}', verbosity=1)
+        self.logger.debug(f'INIT EMBEDDING SUM CATEGORICAL: {num_categorical_cols}', verbosity=1)
 
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
         self.loss_function = nn.NLLLoss()
         self.metrics = ['fscore', 'auc']
-        
-    # def parameters(self):
-    #     pass
-
-    def forward(self, x_categorical, x_numerical):
-        # Define how data is passed through the model
-        embeddings = []
-        for i,e in enumerate(self.embeddings):
-            embeddings.append(e(x_categorical[:,i]))
-        x = torch.cat(embeddings,1)
-        x = self.embedding_dropout(x)
-
-        x_numerical = self.batch_norm_num(x_numerical)
-        x = torch.cat([x, x_numerical], 1)
-        x = self.layers(x)
-
-        return x
-
-        # hidden1 = self.linear1(feature_vec).clamp(min=0) # ReLU
-        # output = self.linear2(hidden1)
-        # return F.log_softmax(output, dim=1)
-
+    
     def _build(self, len_input: int):
-        i = 128
         all_layers = []
-        # self.layer_linear_final = nn.Linear(i, len(Label))
-
         for i in self.layers:
             all_layers.append(nn.Linear(len_input, i))
             all_layers.append(nn.ReLU(inplace=True))
@@ -68,13 +60,68 @@ class L2DClassifier(nn.Module):
             all_layers.append(nn.Dropout(self.dropout_rate))
             len_input = i
         all_layers.append(nn.Linear(self.layers[-1], len(Label)))
-        # layers.append(nn.Linear(i, len(Label)))
 
         self.stack = nn.Sequential(*all_layers)
 
-    def fit(self, training_data: pd.DataFrame, epochs=None):
+    def forward(self, x_categorical, x_numerical):
+        # Define how data is passed through the model
+        m = 'In forward(): \n\tx_categorical:\n{}\n\tx_numerical:\n{}'
+        self.logger.debug(m.format(x_categorical, x_numerical), verbosity=3)
+        n = 'In forward(): x_categorical has {}, x_numerical has {}'
+        self.logger.debug(n.format(x_categorical.size(), x_numerical.size()), verbosity=3)
+
+        embeddings = []
+        for i,e in enumerate(self.embeddings):
+            self.logger.debug(f'In forward(): {i},{e}', verbosity=1)
+            self.logger.debug(f'\n{e(x_categorical[:,i])}', verbosity=3)
+            embeddings.append(e(x_categorical[:,i]))
+        # TODO refactor
+        x = torch.cat(embeddings,1)
+        x = self.embedding_dropout(x)
+        x_numerical = self.batch_norm_num(x_numerical)
+        x = torch.cat([x, x_numerical], 1)
+        x = self.stack(x)
+        return x
+
+    def fit(self, idxs: pd.Index, epochs=None) -> None:
+        self.logger.debug("Starting training...", verbosity=1)
+        self.len_data = len(idxs)
         epochs = epochs if epochs is not None else self.epochs
         
+        _dict_tensors = self.datamgr.tensor_data.loc(idxs)
+        i = 100 # TODO index out of range in self
+        categorical_data = _dict_tensors[VarType.CATEGORICAL][:i]
+        numerical_data     = _dict_tensors[VarType.NUMERICAL][:i]
+        labels        = self.datamgr.tensor_data.torch_dataset.labels[idxs][:i]
+
+        m = 'SHAPES: {} (categorical) | {} (numerical) {} (labels)'
+        self.logger.debug(m.format(categorical_data.shape, numerical_data.shape, labels.shape))
+        aggregated_losses = []
+        # TODO 
+        # (1) perform selections per epoch
+        # (2) shuffle pre-epoch selections
+        for e in range(epochs):
+            e += 1
+            y_pred = self(categorical_data, numerical_data)
+            # compute loss function, do backward pass, and update the gradient
+            single_loss = self.loss_function(y_pred, labels)
+            aggregated_losses.append(single_loss)
+
+            self.optimizer.zero_grad()
+            single_loss.backward()
+            self.optimizer.step()
+            self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=1)
+        self.logger.debug(f'FINAL EPOCH: {e:3}')
+        self.logger.debug(f'TRAINING LOSS: {single_loss.item():10.10f}')
+
+        #TODO EXTRACT
+        plt.plot(range(epochs), [i.item() for i in aggregated_losses])
+        plt.ylabel('Loss')
+        plt.xlabel('epoch')
+        plt.savefig('loss-vs-epoch.png')
+        plt.clf()
+        return
+
         FAIRNESS = ParamType.FAIRNESS.value
         FAIR = Label.FAIR.value
         UNFAIR = Label.UNFAIR.value
@@ -93,95 +140,53 @@ class L2DClassifier(nn.Module):
             # Select an equal number of samples from each set for this epoch
             epoch_data = pd.concat([fair[:self.selections_per_epoch], unfair[:self.selections_per_epoch]])
             epoch_data = self.datamgr.shuffle(epoch_data) 
-                    
-            # train our model
-            print(epoch_data)
-            print(epoch_data[FAIRNESS])
-            lambda x: self.datamgr.feature_vector(x)
-            for item in epoch_data:
-                features = item[1].split()
-                label = int(item[2])
 
-                self.zero_grad() 
-                feature_vec = self.make_feature_vector(features, self.feature_index)
-                target = torch.LongTensor([int(label)])
-
-                log_probs = model(feature_vec)
-
-                # compute loss function, do backward pass, and update the gradient
-                loss = loss_function(log_probs, target)
-                loss.backward()
-                optimizer.step()    
-
-    def evaluate_model(self, model, evaluation_data):
+    def evaluate_model(self, test_idxs: pd.Index) -> List[float]:
         """Evaluate the model on the held-out evaluation data
         Return the f-value for disaster-related and the AUC
         """
-
-        related_confs = [] # related items and their confidence of being related
-        not_related_confs = [] # not related items and their confidence of being _related_
-
-        true_pos = 0.0 # true positives, etc 
-        false_pos = 0.0
-        false_neg = 0.0
+        i= 100 # TODO batch? Duplications
+        _dict_tensors = self.datamgr.tensor_data.loc(test_idxs)
+        categorical_data = _dict_tensors[VarType.CATEGORICAL][:i]
+        numerical_data     = _dict_tensors[VarType.NUMERICAL][:i]
+        labels        = self.datamgr.tensor_data.tensor_dataset.labels[test_idxs][:i]
 
         with torch.no_grad():
-            for item in evaluation_data:
-                _, text, label, _, _, = item
+            y_val = self(categorical_data, numerical_data)
+            loss  = self.loss_function(y_val, labels)
+        y_val = np.argmax(y_val, axis=1)
+        auc = roc_auc_score(labels, y_val)
+        fpr, tpr, _ = roc_curve(labels, y_val)
 
-                feature_vector = self.make_feature_vector(text.split(), self.feature_index)
-                log_probs = model(feature_vector)
+        #TODO EXTRACT
+        plt.plot(fpr, tpr, label="AUC="+str(auc))
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.savefig('roc.png')
 
-                # get confidence that item is disaster-related
-                prob_fair = math.exp(log_probs.data.tolist()[0][1]) 
+        self.logger.debug(f'TEST LOSS: {loss:.8f}')
+        self.logger.debug(f'CONFUSION MATRIX:\n{confusion_matrix(labels, y_val)}')
+        self.logger.debug(f'CLASSIFICATION REPORT: \n{classification_report(labels, y_val)}')
+        self.logger.debug(f'ACCURACY: {accuracy_score(labels, y_val)}')
+        self.logger.debug(f'AUC: {auc}')
 
-                if(label == "1"):
-                    # true label is disaster related
-                    related_confs.append(prob_fair)
-                    if prob_fair > 0.5:
-                        true_pos += 1.0
-                    else:
-                        false_neg += 1.0
-                else:
-                    # not disaster-related
-                    not_related_confs.append(prob_fair)
-                    if prob_fair > 0.5:
-                        false_pos += 1.0
-
-        # Get FScore
-        if true_pos == 0.0:
-            fscore = 0.0
-        else:
-            precision = true_pos / (true_pos + false_pos)
-            recall = true_pos / (true_pos + false_neg)
-            fscore = (2 * precision * recall) / (precision + recall)
-
-        # GET AUC
-        not_related_confs.sort()
-        total_greater = 0 # count of how many total have higher confidence
-        for conf in related_confs:
-            for conf2 in not_related_confs:
-                if conf < conf2:
-                    break
-                else:                  
-                    total_greater += 1
-
-
-        denom = len(not_related_confs) * len(related_confs) 
-        auc = total_greater / denom
-
+        # precision = precision_score(labels, y_val)
+        # recall = recall_score(labels, y_val)
+        fscore = f1_score(labels, y_val)
         return[fscore, auc]
 
-    def save_model(self):
+    def save_model(self, fscore, auc):
         fscore = round(fscore,3)
         auc = round(auc,3)
+        cfg = ConfigManager.get_instance()
 
         # save model to path that is alphanumeric and includes number of items and accuracies in filename
         timestamp = re.sub('\.[0-9]*','_',str(datetime.datetime.now())).replace(" ", "_").replace("-", "").replace(":","")
-        training_size = "_"+str(len(self.training_data))
+        training_size = "_"+str(self.len_data)
         accuracies = str(fscore)+"_"+str(auc)
-                        
-        model_path = "models/"+timestamp+accuracies+training_size+".params"
 
-        torch.save(model.state_dict(), model_path)
+        Path(cfg.model_path).mkdir(parents=True, exist_ok=True)
+        model_path = os.path.join(cfg.model_path,timestamp+accuracies+training_size+".params")
+
+        torch.save(self.state_dict(), model_path)
         return model_path

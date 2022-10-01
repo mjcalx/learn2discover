@@ -71,6 +71,7 @@ class ConfigManager:
         load_fn()
         self.primary_logger_type = self.configs.get('log').get('primary_logger_type')
         self.log_level = self.configs.get('log').get('log_level')
+        self.verbosity = self.configs.get('log').get('verbosity')
 
     def _load_data_gen_configs(self) -> None:
         self.schema_file           = self.configs.get('generator_settings').get('schema_file')

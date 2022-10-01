@@ -9,6 +9,7 @@ class LoggingUtils:
     def __init__(self):
         self.primary_logger_type = ConfigManager.get_instance().primary_logger_type
         self.log_level = ConfigManager.get_instance().log_level
+        self.verbosity = ConfigManager.get_instance().verbosity
 
     @staticmethod
     def get_instance():
@@ -37,3 +38,6 @@ class LoggingUtils:
 
     def get_log_level(self):
         return self.log_level
+
+    def get_verbosity(self):
+        return self.verbosity

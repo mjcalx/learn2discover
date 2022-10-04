@@ -32,9 +32,6 @@ from data.data_classes import ParamType, Label
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 from oracle.l2d_classifier import L2DClassifier
 
-# FAIRNESS = ParamType.FAIRNESS.value
-# FAIR = Label.FAIR.value
-# UNFAIR = Label.UNFAIR.value
 
 def main():
     learn_to_discover = Learn2Discover()
@@ -139,9 +136,15 @@ class Learn2Discover:
                 total_feature_counts[feature] += 1
         return outliers
 
-    class SplitDataset:
-        def __init__(self):
-            pass
+    def _train_and_evaluate(self, training_idxs: pd.Index, test_idxs: pd.Index) -> str:
+        train_idxs_shuffled = self.dataset_manager.shuffle(training_idxs)
+        test_idxs_shuffled = self.dataset_manager.shuffle(test_idxs)
+        
+        self.classifier.fit(train_idxs_shuffled)  # Training
+        fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)  # Evaluation
+        
+        model_path = self.classifier.save_model(fscore, auc)
+        return model_path
 
     def _learn(self):
         # Train new model with current training data
@@ -153,12 +156,10 @@ class Learn2Discover:
 
         self.classifier = L2DClassifier(embedding_sizes, numerical_data.shape[1])
         
-        # Training
-        self.classifier.fit(self.dataset.training_data.index)
-
-        # Evaluation
-        fscore, auc = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
-        model_path = self.classifier.save_model(fscore, auc)
+        model_path = self._train_and_evaluate(
+            training_idxs=self.dataset.training_data.index,
+            test_idxs=self.dataset.evaluation_data.index
+        )
 
         self.classifier.load_state_dict(torch.load(model_path))
         
@@ -226,9 +227,10 @@ class Learn2Discover:
         self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate} ')
         # epochs training
 
-        self.classifier.fit(self.dataset.training_data.index)
-        fscore, auc = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
-        model_path = self.classifier.save_model(fscore, auc)
+        model_path = self._train_and_evaluate(
+            training_idxs=self.dataset.training_data.index,
+            test_idxs=self.dataset.evaluation_data.index
+        )
         ###########################################
         self.classifier.load_state_dict(torch.load(model_path))
 

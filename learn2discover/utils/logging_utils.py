@@ -41,3 +41,11 @@ class LoggingUtils:
 
     def get_verbosity(self):
         return self.verbosity
+
+class Verbosity(Enum):
+    BASE = 0
+    CHATTY = 1
+    TALKATIVE = 2
+    VERBOSE = 3
+    INCESSANT = 4
+    SESQUIPEDALIAN = 5

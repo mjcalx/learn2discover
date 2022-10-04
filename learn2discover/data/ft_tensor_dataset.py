@@ -4,6 +4,7 @@ import pandas as pd
 from typing import Dict, Tuple
 
 from loggers.logger_factory import LoggerFactory
+from utils.logging_utils import Verbosity
 from data.ft_dataframe_dataset import FTDataFrameDataset
 from data.data_classes import ParamType, VarType
 from data.schema import Schema
@@ -21,9 +22,9 @@ class FTTensorDataset:
 
         col_size = lambda col : len(self._ftdata.flat_index()[col].cat.categories)
         self.categorical_column_sizes = [col_size(col) for col in self.categorical_columns]
-        self.logger.debug(f'Column value sizes: {list(zip(self.categorical_columns,self.categorical_column_sizes))}', verbosity=2)
+        self.logger.debug(f'Column value sizes: {list(zip(self.categorical_columns,self.categorical_column_sizes))}', verbosity=Verbosity.TALKATIVE)
         self.categorical_embedding_sizes = [(col_size, min(50, (col_size+1)//2)) for col_size in self.categorical_column_sizes]
-        self.logger.debug(f'Categorical embedding sizes: {self.categorical_embedding_sizes}', verbosity=2)
+        self.logger.debug(f'Categorical embedding sizes: {self.categorical_embedding_sizes}', verbosity=Verbosity.TALKATIVE)
 
     @property
     def categorical_columns(self):
@@ -45,8 +46,8 @@ class FTTensorDataset:
         }
 
         msg = "tensors of size {} (categorical) and {} (numerical) retrieved"
-        self.logger.debug(msg.format(tensors[c].size(), tensors[n].size()), verbosity=1)
-        self.logger.debug(f'{tensors[c]}, {tensors[n]}',verbosity=2)
+        self.logger.debug(msg.format(tensors[c].size(), tensors[n].size()), verbosity=Verbosity.CHATTY)
+        self.logger.debug(f'{tensors[c]}, {tensors[n]}',verbosity=Verbosity.TALKATIVE)
 
         return tensors
     

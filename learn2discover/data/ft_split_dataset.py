@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from loggers.logger_factory import LoggerFactory
+from utils.logging_utils import Verbosity
 from configs.config_manager import ConfigManager
 from data.data_classes import ParamType, Label
 from data.ft_dataframe_dataset import FTDataFrameDataset
@@ -18,7 +19,7 @@ class FTSplitDataset:
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.random = random_state
         n = 'splitting based on test_fraction={}, unlabelled_fraction={}'
-        self.logger.debug(n.format(test_fraction, unlabelled_fraction), verbosity=0)
+        self.logger.debug(n.format(test_fraction, unlabelled_fraction), verbosity=Verbosity.BASE)
 
         if unlabelled_fraction:
             assert test_fraction + unlabelled_fraction < 1
@@ -143,7 +144,6 @@ class FTSplitDataset:
         assert isinstance(fair_idxs, pd.DataFrame)
         return all_idxs, fair_idxs, unfair_idxs
 
-
     def _train_test_split(self) -> None:
         train_idxs, test_idxs, unlabelled_idxs = self._split_index()
 
@@ -180,7 +180,7 @@ class FTSplitDataset:
         train_record_count = len(data) - test_record_count - self.unlabelled_fraction
 
         not_in = lambda idxs : ~data.index.isin(idxs)
-        test_idxs = pd.Index(self.random.choice(len(data), test_record_count, replace=False))
+        test_idxs = pd.Index(self.random.choice(data.index, test_record_count, replace=False))
         _idxs_left = data.loc[~data.index.isin(test_idxs)].index
 
         if cfg.has_human_in_the_loop:
@@ -191,7 +191,7 @@ class FTSplitDataset:
 
         _m = 'split_dataset(): {} (train), {} (test), {} (unlabelled), {} (data), {} (total)'
         _lengths = [len(x) for x in [train_idxs, test_idxs, unlabelled_idxs, data]]
-        self.logger.debug(_m.format(*_lengths, sum(_lengths) - len(data)), verbosity=0)
+        self.logger.debug(_m.format(*_lengths, sum(_lengths) - len(data)), verbosity=Verbosity.BASE)
         assert len(test_idxs) + len(unlabelled_idxs) + len(train_idxs)== len(data)
         return train_idxs, test_idxs, unlabelled_idxs
 

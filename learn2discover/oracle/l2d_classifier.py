@@ -20,6 +20,7 @@ from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
 from data.data_classes import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
+from utils.logging_utils import Verbosity
 
 
 class L2DClassifier(nn.Module):
@@ -43,8 +44,8 @@ class L2DClassifier(nn.Module):
         _td = self.datamgr.tensor_data
         num_categorical_cols = sum([nf for ni, nf in embedding_size])
         self._build(len_input=num_categorical_cols+len(_td.numerical_columns))
-        self.logger.debug(f'NUM COLUMNS: CAT {len(_td.categorical_columns)}, NUM {len(_td.numerical_columns)}', verbosity=1)
-        self.logger.debug(f'INIT EMBEDDING SUM CATEGORICAL: {num_categorical_cols}', verbosity=1)
+        self.logger.debug(f'NUM COLUMNS: CAT {len(_td.categorical_columns)}, NUM {len(_td.numerical_columns)}', verbosity=Verbosity.CHATTY)
+        self.logger.debug(f'INIT EMBEDDING SUM CATEGORICAL: {num_categorical_cols}', verbosity=Verbosity.CHATTY)
 
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
@@ -66,14 +67,14 @@ class L2DClassifier(nn.Module):
     def forward(self, x_categorical, x_numerical):
         # Define how data is passed through the model
         m = 'In forward(): \n\tx_categorical:\n{}\n\tx_numerical:\n{}'
-        self.logger.debug(m.format(x_categorical, x_numerical), verbosity=3)
+        self.logger.debug(m.format(x_categorical, x_numerical), verbosity=Verbosity.INCESSANT)
         n = 'In forward(): x_categorical has {}, x_numerical has {}'
-        self.logger.debug(n.format(x_categorical.size(), x_numerical.size()), verbosity=3)
+        self.logger.debug(n.format(x_categorical.size(), x_numerical.size()), verbosity=Verbosity.VERBOSE)
 
         embeddings = []
         for i,e in enumerate(self.embeddings):
-            self.logger.debug(f'In forward(): {i},{e}', verbosity=1)
-            self.logger.debug(f'\n{e(x_categorical[:,i])}', verbosity=3)
+            self.logger.debug(f'In forward(): {i},{e}', verbosity=Verbosity.TALKATIVE)
+            self.logger.debug(f'\n{e(x_categorical[:,i])}', verbosity=Verbosity.INCESSANT)
             embeddings.append(e(x_categorical[:,i]))
         # TODO refactor
         x = torch.cat(embeddings,1)
@@ -84,7 +85,7 @@ class L2DClassifier(nn.Module):
         return x
 
     def fit(self, idxs: pd.Index, epochs=None) -> None:
-        self.logger.debug("Starting training...", verbosity=1)
+        self.logger.debug("Starting training...", verbosity=Verbosity.CHATTY)
         self.len_data = len(idxs)
         epochs = epochs if epochs is not None else self.epochs
         
@@ -110,7 +111,8 @@ class L2DClassifier(nn.Module):
             self.optimizer.zero_grad()
             single_loss.backward()
             self.optimizer.step()
-            self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=1)
+
+            self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=Verbosity.CHATTY)
         self.logger.debug(f'FINAL EPOCH: {e:3}')
         self.logger.debug(f'TRAINING LOSS: {single_loss.item():10.10f}')
 

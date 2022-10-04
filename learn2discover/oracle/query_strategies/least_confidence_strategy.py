@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from oracle.query_strategies.query_strategy import QueryStrategy
 from data.data_classes import VarType
+from utils.logging_utils import Verbosity
 # from data.dataset_manager import DatasetManager
 
 class LeastConfidenceStrategy(QueryStrategy):
@@ -38,7 +39,7 @@ class LeastConfidenceStrategy(QueryStrategy):
         with torch.no_grad():
             for i in range(num_instances):
                 id = idxs[i]
-                self.logger.debug(f'ID={id}', verbosity=2)
+                self.logger.debug(f'ID={id}', verbosity=Verbosity.TALKATIVE)
 
                 if id in self.already_labelled:
                     continue
@@ -48,7 +49,7 @@ class LeastConfidenceStrategy(QueryStrategy):
                 output = classifier(categorical_tensors[None, i], numerical_tensors[None, i])
                 probs = torch.nn.functional.softmax(output, dim=1)
                 prob_fair = probs[0][0] # TODO confirm not [0][1]
-                self.logger.debug(f'PROBS: {probs}', verbosity=2)
+                self.logger.debug(f'PROBS: {probs}', verbosity=Verbosity.TALKATIVE)
                 # feature_vector = self.make_feature_vector(text.split(), self.feature_index)
                 # log_probs = self(feature_vector)
 

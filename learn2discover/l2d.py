@@ -24,7 +24,7 @@ sys.path.index(current_path)
 sys.path.index(lib_path)
 
 from configs.config_manager import ConfigManager
-from utils.logging_utils import LoggingUtils
+from utils.logging_utils import LoggingUtils, Verbosity
 from loggers.logger_factory import LoggerFactory
 from data.schema import VarType
 from data.dataset_manager import DatasetManager
@@ -172,7 +172,7 @@ class Learn2Discover:
         self.logger.debug(_m.format(len(sampled_idxs)))
 
         random_items = self.dataset.unlabelled_data.loc[sampled_idxs]
-        self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=1)
+        self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=Verbosity.CHATTY)
         
         sample_unlabelled = self.query_strategy.query(self.classifier, random_items)
 
@@ -210,7 +210,7 @@ class Learn2Discover:
         self.logger.debug(_m.format(
             _old_len_fair,   len(annotated_data_fair),   len(self.dataset.training_data_fair),
             _old_len_unfair, len(annotated_data_unfair), len(self.dataset.training_data_unfair),
-            verbosity = 1
+            verbosity = Verbosity.CHATTY
         ))
 
     def _annotate_and_retrain(self):
@@ -224,7 +224,7 @@ class Learn2Discover:
         # UPDATE OUR DATA AND (RE)TRAIN MODEL WITH NEWLY ANNOTATED DATA
         # vocab_size = create_features() # TODO: replace this method
         # TODO: custom labels
-        self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate} ')
+        self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate}', verbosity=Verbosity.BASE)
         # epochs training
 
         model_path = self._train_and_evaluate(

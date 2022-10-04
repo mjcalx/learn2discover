@@ -13,6 +13,7 @@ from data.schema import Schema, VarType
 from data.loader import Loader
 from data.data_classes import DataAttributes, Label, Outcome, ParamType
 from utils.validation_utils import ValidationUtils
+from utils.logging_utils import Verbosity
 from configs.config_manager import ConfigManager
 from data.dataset_factory import DatasetFactory
 from data.facades import DatasetFacade
@@ -124,17 +125,16 @@ class DatasetManager:
         _label_values = [v.value for v in Label]
         idxs = data[FAIRNESS][~data[FAIRNESS].isin(_label_values)].index
         assert len(idxs) > 0
-        self.logger.debug(f'{len(idxs)} unlabelled idxs found', verbosity=0)
+        self.logger.debug(f'{len(idxs)} unlabelled idxs found', verbosity=Verbosity.BASE)
         return idxs
 
     def shuffle(self, data: pd.DataFrame) -> pd.DataFrame:
         _num_rows = 2
-        _show = lambda df : (len(df[:_num_rows:]), df[:_num_rows:])
-        self.logger.debug('before shuffle(): first {} rows:\n{}'.format(*_show(data)), verbosity=2)
-        _lst_idxs = list(data.index)
+        _m = '{} shuffle(): first {} indices:\n{}'
+        self.logger.debug(_m.format('before', *_show(data)), verbosity=Verbosity.TALKATIVE)
         self.random.shuffle(_lst_idxs)
         shuffled = data.loc[pd.Index(_lst_idxs)]
-        self.logger.debug('after shuffle(): first {} rows:\n{}'.format(*_show(shuffled)), verbosity=2)
+        self.logger.debug(_m.format('after', *_show(shuffled)), verbosity=Verbosity.TALKATIVE)
         return shuffled
 
     def choose_random_unlabelled(self, unlabelled_idxs: pd.Index) -> pd.Index:

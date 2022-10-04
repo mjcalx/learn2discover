@@ -13,7 +13,7 @@ class ConsoleLogger(Logger):
             self._msg_format('DEBUG',message)
 
     def info(self, message, verbosity=Verbosity.BASE):
-        if self.log_level == 'info' and verbosity.value <= self.verbosity:
+        if self.log_level in ['info', 'debug'] and verbosity.value <= self.verbosity:
             current_datetime = datetime.now()
             self._msg_format('INFO',message)
 

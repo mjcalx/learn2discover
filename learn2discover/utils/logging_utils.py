@@ -1,4 +1,5 @@
 import numpy as np
+from enum import Enum
 from datetime import datetime
 from configs.config_manager import ConfigManager
 
@@ -23,7 +24,7 @@ class LoggingUtils:
             print(message)
 
     def info(self, message):
-        if self.log_level == 'info':
+        if self.log_level in ['info', 'debug']:
             print(message)
 
     def warn(self, message):

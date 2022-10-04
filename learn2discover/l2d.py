@@ -86,56 +86,6 @@ class Learn2Discover:
         if self.dataset.training_count > self.min_training_items:
             self._annotate_and_retrain()
 
-    # TODO ????
-    def get_outliers(self, training_data, unlabeled_data, number=10):
-        """Get outliers from unlabeled data in training data
-        Returns number outliers
-        
-        An outlier is defined as the percent of words in an item in 
-        unlabeled_data that do not exist in training_data
-        """
-        outliers = []
-
-        total_feature_counts = defaultdict(lambda: 0)
-        
-        for item in training_data:
-            text = item[1]
-            features = text.split()
-
-            for feature in features:
-                total_feature_counts[feature] += 1
-                    
-        while(len(outliers) < number):
-            top_outlier = []
-            top_match = float("inf")
-
-            for item in unlabeled_data:
-                textid = item[0]
-                if textid in self.already_labeled:
-                    continue
-
-                text = item[1]
-                features = text.split()
-                total_matches = 1 # start at 1 for slight smoothing 
-                for feature in features:
-                    if feature in total_feature_counts:
-                        total_matches += total_feature_counts[feature]
-
-                ave_matches = total_matches / len(features)
-                if ave_matches < top_match:
-                    top_match = ave_matches
-                    top_outlier = item
-
-            # add this outlier to list and update what is 'labeled', 
-            # assuming this new outlier will get a label
-            top_outlier[3] = "outlier"
-            outliers.append(top_outlier)
-            text = top_outlier[1]
-            features = text.split()
-            for feature in features:
-                total_feature_counts[feature] += 1
-        return outliers
-
     def _train_and_evaluate(self, training_idxs: pd.Index, test_idxs: pd.Index) -> str:
         train_idxs_shuffled = self.dataset_manager.shuffle(training_idxs)
         test_idxs_shuffled = self.dataset_manager.shuffle(test_idxs)
@@ -178,10 +128,6 @@ class Learn2Discover:
 
         # stop using existing model for queries and continue training
         self.classifier.train()
-        ########TODO GET OUTLIERS??###########
-        # outliers = self.get_outliers(training_data+random_items+low_confidences, data, number=10)
-        # sampled_data = random_items + low_confidences + outliers
-        # shuffle(sampled_data)
  
         FAIRNESS = ParamType.FAIRNESS.value
         FAIR     = Label.FAIR.value

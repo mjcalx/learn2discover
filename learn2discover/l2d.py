@@ -60,7 +60,6 @@ class Learn2Discover:
             self.test_fraction = self.config_manager.test_fraction
             
             _uf = self.config_manager.unlabelled_fraction
-            self.logger.debug(f'UNLAB {_uf}')
             self.unlabelled_fraction = _uf if _uf is not None else 0
             self.min_evaluation_items = self.config_manager.min_evaluation_items
             self.min_training_items = self.config_manager.min_training_items
@@ -155,90 +154,85 @@ class Learn2Discover:
         self.classifier = L2DClassifier(embedding_sizes, numerical_data.shape[1])
         
         # Training
-        self.logger.debug(self.dataset.training_data.index)
         self.classifier.fit(self.dataset.training_data.index)
 
         # Evaluation
         fscore, auc = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
         model_path = self.classifier.save_model(fscore, auc)
 
-        self.logger.debug("Sampling via Active Learning:\n")
         self.classifier.load_state_dict(torch.load(model_path))
         
         # stop training in order to query single samples
         self.classifier.eval()
-        
-        # get 100 items per iteration with the following breakdown of strategies:
-        random_idxs = self.dataset_manager.choose_random_unlabelled(unlabelled_idxs)
-        _m = 'Learn2Discover.run(): selected random sample of {} unlabelled instances'
-        self.logger.debug(_m.format(len(random_idxs)))
 
-        random_items = self.unlabelled_data.loc[random_idxs]
-        self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=0)
+        # get 100 items per iteration with the following breakdown of strategies:
+        sampled_idxs = self.dataset_manager.choose_random_unlabelled(self.dataset.unlabelled_idxs)
+        _m = 'run(): selected random sample of {} unlabelled instances'
+        self.logger.debug(_m.format(len(sampled_idxs)))
+
+        random_items = self.dataset.unlabelled_data.loc[sampled_idxs]
+        self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=1)
         
         sample_unlabelled = self.query_strategy.query(self.classifier, random_items)
+
         # stop using existing model for queries and continue training
-        # self.classifier.train()
+        self.classifier.train()
         ########TODO GET OUTLIERS??###########
         # outliers = self.get_outliers(training_data+random_items+low_confidences, data, number=10)
-
         # sampled_data = random_items + low_confidences + outliers
         # shuffle(sampled_data)
+ 
         shuffled_sample_unlabelled = self.dataset_manager.shuffle(sample_unlabelled)
-        ###################
-        df = self.dataset_manager.data.all_columns()
-        annotated_data = self._get_annotations(sample_unlabelled)
-        self.annotated_data_fair   = df.loc[_index_fn(annotated_data.index, FAIR)]
-        self.annotated_data_unfair = df.loc[_index_fn(annotated_data.index, UNFAIR)]
-        assert len(self.annotated_data_fair) + len(self.annotated_data_unfair) == len(annotated_data)
+ 
+        FAIRNESS = ParamType.FAIRNESS.value
+        FAIR     = Label.FAIR.value
+        UNFAIR   = Label.UNFAIR.value
 
-        _old_len_fair   = len(self.training_data_fair)
-        _old_len_unfair = len(self.training_data_unfair)
+        # pass responsibility for labelling to attached oracle
+        annotated_data = self._get_annotations(shuffled_sample_unlabelled)
 
-        self.training_data_fair   = pd.concat([self.training_data_fair,   self.annotated_data_fair])
-        self.training_data_unfair = pd.concat([self.training_data_unfair, self.annotated_data_unfair])
+        _select = lambda label : annotated_data[FAIRNESS][FAIRNESS][lambda x : x == label]
+        annotated_data_fair   = _select(FAIR)
+        annotated_data_unfair = _select(UNFAIR)
+
+        _old_len_fair   = len(self.dataset.training_data_fair)
+        _old_len_unfair = len(self.dataset.training_data_unfair)
+
+        # update training set
+        assert len(set(annotated_data.index).intersection(set(self.dataset.training_data.index))) == 0
+        
+        self.dataset.set_training_data(self.dataset.training_data.index.union(annotated_data.index))
 
         _m =  'added annotations:\n'
         _m += '\t{} fair instances   + {} annotated "fair" instances   = {}  updated fair instance count\n'
         _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'
         self.logger.debug(_m.format(
-            _old_len_fair,   len(self.annotated_data_fair),   len(self.training_data_fair),
-            _old_len_unfair, len(self.annotated_data_unfair), len(self.training_data_unfair),
-            verbosity = 2
+            _old_len_fair,   len(annotated_data_fair),   len(self.dataset.training_data_fair),
+            _old_len_unfair, len(annotated_data_unfair), len(self.dataset.training_data_unfair),
+            verbosity = 1
         ))
 
-        self._update_training_count()
-
     def _annotate_and_retrain(self):
-        self.logger.debug("\nRetraining model with new data")
+        self.logger.debug("Retraining model with new data")
             
-        # UPDATE OUR DATA AND (RE)TRAIN MODEL WITH NEWLY ANNOTATED DATA
-        training_data = self.dataset_manager.load_data(self.training_data_fair) + self.dataset_manager.load_data(self.training_data_unfair)
-        _update_training_count()
-
-        evaluation_data = self.dataset_manager.load_data(self.evaluation_data_fair) + self.dataset_manager.load_data(self.evaluation_data_unfair)
-        _update_evaluation_count()
-
-        vocab_size = create_features() # TODO: replace this method
         ########################################### train_model
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
-        assert self.training_data is not None
-        assert self.evaluation_data is not None
-
+        # UPDATE OUR DATA AND (RE)TRAIN MODEL WITH NEWLY ANNOTATED DATA
+        # vocab_size = create_features() # TODO: replace this method
         # TODO: custom labels
         self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate} ')
         # epochs training
 
-        self.classifier.fit(x=[training_data_fair, training_data_unfair], y=[labels])
-        fscore, auc = self.classifier.evaluate_model(self.evaluation_data)
-        model_path = model.save_model(fscore, auc)
+        self.classifier.fit(self.dataset.training_data.index)
+        fscore, auc = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
+        model_path = self.classifier.save_model(fscore, auc)
         ###########################################
         self.classifier.load_state_dict(torch.load(model_path))
 
-        accuracies = self.evaluate_model(model, evaluation_data)
+        accuracies = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
         self.logger.info(f"[fscore, auc] = {accuracies}")
         self.logger.info(f"Model saved to:  {model_path}")
 
@@ -250,7 +244,7 @@ class Learn2Discover:
         self.dataset_manager.shuffle(data)
         needed = self.min_training_items - training_count
         data = data[:needed]
-        print(str(needed)+" more annotations needed")
+        # print(str(needed)+" more annotations needed")
 
         data = self._get_annotations(data)
 

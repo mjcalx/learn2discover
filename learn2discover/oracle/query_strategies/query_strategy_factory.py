@@ -8,7 +8,6 @@ class QueryStrategyFactory:
     def __init__(self):
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.DEFAULT = LeastConfidenceStrategy
-        pass
 
     def get_strategy(self, type_selection: str) -> QueryStrategy:
         strategy_types = {
@@ -22,5 +21,5 @@ class QueryStrategyFactory:
             self.logger.debug(f'QueryStrategy for "{type_selection}" not found. Defaulting to "least_confidence"')
             strategy = self.DEFAULT()
         finally:
-            self.logger.debug(f'Select QueryStrategy for "{type_selection}" : {str(type(strategy).__name__)}')        
+            self.logger.info(f'Select QueryStrategy for "{type_selection}" : {str(strategy.name)}')        
         return strategy

@@ -1,6 +1,8 @@
+import pandas as pd
+import torch.nn as nn
+
 from loggers.logger_factory import LoggerFactory
 from data.dataset_manager import DatasetManager
-import torch.nn as nn
 
 class QueryStrategy:
 
@@ -10,14 +12,13 @@ class QueryStrategy:
 
         assert isinstance(self.dataset_manager, DatasetManager)
 
+    @property
+    def name(self):
+        return 'Generic Query Strategy'
     
     def _type(self):
         return self.__class__.__name__
-
     
-    def __name__(self):
-        return 'Generic Query Strategy'
-    
-    def query(self, classifier: nn.Module) -> None:
+    def query(self, classifier: nn.Module, *args, **kwargs) -> pd.DataFrame:
         pass
     

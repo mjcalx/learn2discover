@@ -11,7 +11,8 @@ class LeastConfidenceStrategy(QueryStrategy):
         super(LeastConfidenceStrategy, self).__init__()
         self.already_labelled = pd.Index([])
 
-    def __name__(self):
+    @property
+    def name(self):
         return 'Least Confidence Strategy'
 
     def query(self, classifier: nn.Module, unlabelled_data: pd.DataFrame, number: int=80, limit: int=10000) -> pd.DataFrame:

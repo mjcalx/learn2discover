@@ -183,11 +183,12 @@ class Learn2Discover:
         # sampled_data = random_items + low_confidences + outliers
         # shuffle(sampled_data)
  
-        shuffled_sample_unlabelled = self.dataset_manager.shuffle(sample_unlabelled)
- 
         FAIRNESS = ParamType.FAIRNESS.value
         FAIR     = Label.FAIR.value
         UNFAIR   = Label.UNFAIR.value
+
+        idxs_shuffled = self.dataset_manager.shuffle(sample_unlabelled.index)
+        shuffled_sample_unlabelled = sample_unlabelled.loc[idxs_shuffled]
 
         # pass responsibility for labelling to attached oracle
         annotated_data = self._get_annotations(shuffled_sample_unlabelled)
@@ -243,7 +244,7 @@ class Learn2Discover:
         # lets create our first training data! 
         self.logger.debug("Adding to initial training data...")
 
-        self.dataset_manager.shuffle(data)
+        idxs = self.dataset_manager.shuffle(data.index)
         needed = self.min_training_items - training_count
         data = data[:needed]
         # print(str(needed)+" more annotations needed")

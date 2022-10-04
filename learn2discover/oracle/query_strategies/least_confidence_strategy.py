@@ -26,8 +26,7 @@ class LeastConfidenceStrategy(QueryStrategy):
             idxs = unlabelled_data.index
         else: 
             # only apply the model to a limited number of items
-            shuffled = self.dataset_manager.shuffle(unlabeled_data)
-            idxs = shuffled[:limit].index
+            idxs = self.dataset_manager.shuffle(unlabeled_data)[:limit]
 
         tensors = self.dataset_manager.tensor_data.loc(idxs)
         categorical_tensors = tensors[VarType.CATEGORICAL]

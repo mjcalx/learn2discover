@@ -128,12 +128,14 @@ class DatasetManager:
         self.logger.debug(f'{len(idxs)} unlabelled idxs found', verbosity=Verbosity.BASE)
         return idxs
 
-    def shuffle(self, data: pd.DataFrame) -> pd.DataFrame:
+    def shuffle(self, idxs: pd.Index) -> pd.Index:
         _num_rows = 2
+        _show = lambda df : (len(df[:_num_rows:]), idxs[:_num_rows:])
         _m = '{} shuffle(): first {} indices:\n{}'
-        self.logger.debug(_m.format('before', *_show(data)), verbosity=Verbosity.TALKATIVE)
+        self.logger.debug(_m.format('before', *_show(idxs)), verbosity=Verbosity.TALKATIVE)
+        _lst_idxs = list(idxs)
         self.random.shuffle(_lst_idxs)
-        shuffled = data.loc[pd.Index(_lst_idxs)]
+        shuffled = pd.Index(_lst_idxs)
         self.logger.debug(_m.format('after', *_show(shuffled)), verbosity=Verbosity.TALKATIVE)
         return shuffled
 

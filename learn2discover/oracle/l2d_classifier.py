@@ -114,20 +114,23 @@ class L2DClassifier(nn.Module):
         self.logger.debug("Starting training...", verbosity=Verbosity.CHATTY)
         self.len_data = len(idxs)
         epochs = epochs if epochs is not None else self.epochs
-        
-        _dict_tensors = self.datamgr.tensor_data.loc(idxs)
-        i = 100 # TODO index out of range in self
-        categorical_data = _dict_tensors[VarType.CATEGORICAL][:i]
-        numerical_data     = _dict_tensors[VarType.NUMERICAL][:i]
-        labels        = self.datamgr.tensor_data.torch_dataset.labels[idxs][:i]
+        get_categorical = lambda _dct_tensors : _dct_tensors[VarType.CATEGORICAL]
+        get_numerical  = lambda _dct_tensors : _dct_tensors[VarType.NUMERICAL]
 
-        m = 'SHAPES: {} (categorical) | {} (numerical) {} (labels)'
-        self.logger.debug(m.format(categorical_data.shape, numerical_data.shape, labels.shape))
         aggregated_losses = []
         # TODO 
         # (1) perform selections per epoch
         # (2) shuffle pre-epoch selections
         for e in range(epochs):
+            idxs = self.datamgr.shuffle(idxs)
+            _dict_tensors = self.datamgr.data.loc(idxs)
+            categorical_data = get_categorical(_dict_tensors)[:self.selections_per_epoch:]
+            numerical_data   = get_numerical(_dict_tensors)[:self.selections_per_epoch:]
+            labels           = self.datamgr.data.tensor_labels[idxs][:self.selections_per_epoch:]
+
+            m = 'SHAPES: {} (categorical) | {} (numerical) {} (labels)'
+            self.logger.debug(m.format(categorical_data.shape, numerical_data.shape, labels.shape), verbosity=Verbosity.INCESSANT)
+
             e += 1
             y_pred = self(categorical_data, numerical_data)
             # compute loss function, do backward pass, and update the gradient

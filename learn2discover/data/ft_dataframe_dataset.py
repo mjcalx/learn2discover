@@ -18,15 +18,16 @@ class FTDataFrameDataset:
         self.schema = schema
         self.dataframe = multi_indexed_data
 
+        # todo attribute_data is now flat_index
         self._flat = None
-        self.attributes = None
+        self._attributes = None
         self.attribute_data = None
         # ParamTypes are derived from MultiIndex level 0
         idxs = [self.dataframe[x].columns for x in [ParamType.INPUTS.value, ParamType.OUTPUTS.value]]
         self._attribute_index = pd.Index(list(itertools.chain(*idxs)))
         inputs, outputs = [list(x) for x in idxs]
-        self.attributes = DataAttributes(inputs, outputs)
-        assert self.attributes is not None
+        self._attributes = DataAttributes(inputs, outputs)
+        assert self._attributes is not None
         self._preprocess_categorical_variables()
         self._preprocess_categorical_variables(self.fairness_labels)
         self._reassign_attribute_data()
@@ -51,8 +52,13 @@ class FTDataFrameDataset:
             self.dataframe.loc(axis=1)[:, column_name] = new_column
         self._reassign_attribute_data() # re-assign single-indexed df
     
+    @property
     def all_columns(self) -> pd.DataFrame:
         return copy(self.dataframe)
+
+    @property
+    def attributes(self) -> DataAttributes:
+        return self._attributes
 
     @property
     def X(self) -> pd.DataFrame:
@@ -92,7 +98,7 @@ class FTDataFrameDataset:
 
     def _preprocess_categorical_variables(self, series: pd.Series=None) -> None:
         if series is not None:
-            assert series.name in self.all_columns().columns
+            assert series.name in self.all_columns.columns
             self.dataframe.loc(axis=1)[:, series.name] = series.astype('category')
             return
         for cname in self._categorical_variables():

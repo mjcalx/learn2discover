@@ -75,7 +75,7 @@ class L2DClassifier(nn.Module):
 
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
-        self.loss_function = nn.NLLLoss()
+        self.loss_function = nn.CrossEntropyLoss()
         self.metrics = ['fscore', 'auc']
     
     def _build(self, len_input: int):

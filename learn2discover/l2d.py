@@ -30,6 +30,7 @@ from data.schema import VarType
 from data.dataset_manager import DatasetManager
 from data.data_classes import ParamType, Label
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
+from oracle.stopping_criteria.stopping_criterion_factory import StoppingCriterionFactory
 from oracle.l2d_classifier import L2DClassifier
 
 
@@ -52,8 +53,9 @@ class Learn2Discover:
             self.dataset = self.dataset_manager.data
             self.logger.debug('Loaded DatasetManager.')
             
-            self.query_strategy = QueryStrategyFactory().get_strategy(self.config_manager.query_strategy) 
-            
+            self.query_strategy = QueryStrategyFactory().get_strategy(self.config_manager.query_strategy)
+            self.stopping_criterion = StoppingCriterionFactory().get_stopping_criterion(self.config_manager.stopping_criterion)
+
             self.test_fraction = self.config_manager.test_fraction
             
             _uf = self.config_manager.unlabelled_fraction
@@ -74,17 +76,23 @@ class Learn2Discover:
             exit()
 
     def run(self):
-        if self.dataset.evaluation_count <  self.min_evaluation_items:
-            self._fill_evaluation_data()
+        single_iteration_test_flag = False
+        while not self.stopping_criterion() and not single_iteration_test_flag:
+            print('entering')
+            if self.dataset.evaluation_count <  self.min_evaluation_items:
+                self._fill_evaluation_data()
          
-        elif self.dataset.training_count < self.min_training_items:
-            self._fill_training_data()
+            elif self.dataset.training_count < self.min_training_items:
+                self._fill_training_data()
 
-        else:
-            self._learn()
+            else:
+                self._learn()
 
-        if self.dataset.training_count > self.min_training_items:
-            self._annotate_and_retrain()
+            if self.dataset.training_count > self.min_training_items:
+                self._annotate_and_retrain()
+            
+            single_iteration_test_flag = True
+        self.logger.info('Stopping criterion reached. Exiting...', verbosity=Verbosity.BASE)
 
     def _train_and_evaluate(self, training_idxs: pd.Index, test_idxs: pd.Index) -> str:
         train_idxs_shuffled = self.dataset_manager.shuffle(training_idxs)

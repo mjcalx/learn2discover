@@ -148,26 +148,6 @@ class L2DClassifier(nn.Module):
         plt.xlabel('epoch')
         plt.savefig('loss-vs-epoch.png')
         plt.clf()
-        return
-
-        FAIRNESS = ParamType.FAIRNESS.value
-        FAIR = Label.FAIR.value
-        UNFAIR = Label.UNFAIR.value
-
-        for epoch in range(epochs):
-            print("Epoch: "+str(epoch))
-            current = 0
-            # make a subset of data to use in this epoch
-            # with an equal number of items from each label
-
-            X = self.datamgr.shuffle(training_data) #randomize the order of the training data
-            _index_fn = lambda label : X[FAIRNESS][lambda x : x[FAIRNESS] == label].index
-            fair = X.loc[_index_fn(FAIR)]
-            unfair = X.loc[_index_fn(UNFAIR)]
-            
-            # Select an equal number of samples from each set for this epoch
-            epoch_data = pd.concat([fair[:self.selections_per_epoch], unfair[:self.selections_per_epoch]])
-            epoch_data = self.datamgr.shuffle(epoch_data) 
 
     def evaluate_model(self, test_idxs: pd.Index) -> List[float]:
         """Evaluate the model on the held-out evaluation data

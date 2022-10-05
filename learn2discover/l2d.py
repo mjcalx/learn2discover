@@ -78,7 +78,6 @@ class Learn2Discover:
     def run(self):
         single_iteration_test_flag = False
         while not self.stopping_criterion() and not single_iteration_test_flag:
-            print('entering')
             if self.dataset.evaluation_count <  self.min_evaluation_items:
                 self._fill_evaluation_data()
          
@@ -133,36 +132,13 @@ class Learn2Discover:
         # stop using existing model for queries and continue training
         self.classifier.train()
  
-        FAIRNESS = ParamType.FAIRNESS.value
-        FAIR     = Label.FAIR.value
-        UNFAIR   = Label.UNFAIR.value
-
         idxs_shuffled = self.dataset_manager.shuffle(sample_unlabelled.index)
         shuffled_sample_unlabelled = sample_unlabelled.loc[idxs_shuffled]
 
         # pass responsibility for labelling to attached oracle
         annotated_data = self._get_annotations(shuffled_sample_unlabelled)
 
-        _select = lambda label : annotated_data[FAIRNESS][FAIRNESS][lambda x : x == label]
-        annotated_data_fair   = _select(FAIR)
-        annotated_data_unfair = _select(UNFAIR)
-
-        _old_len_fair   = len(self.dataset.training_data_fair)
-        _old_len_unfair = len(self.dataset.training_data_unfair)
-
-        # update training set
-        assert len(set(annotated_data.index).intersection(set(self.dataset.training_data.index))) == 0
-        
-        self.dataset.set_training_data(self.dataset.training_data.index.union(annotated_data.index))
-
-        _m =  'added annotations:\n'
-        _m += '\t{} fair instances   + {} annotated "fair" instances   = {}  updated fair instance count\n'
-        _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'
-        self.logger.debug(_m.format(
-            _old_len_fair,   len(annotated_data_fair),   len(self.dataset.training_data_fair),
-            _old_len_unfair, len(annotated_data_unfair), len(self.dataset.training_data_unfair),
-            verbosity = Verbosity.CHATTY
-        ))
+        self._update_training_data(annotated_data)
 
     def _annotate_and_retrain(self):
         self.logger.debug("Retraining model with new data")
@@ -241,10 +217,35 @@ class Learn2Discover:
         self.append_data(self.evaluation_data_fair, fair)
         self.append_data(self.evaluation_data_unfair, unfair)
 
+    def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
+        FAIRNESS = ParamType.FAIRNESS.value
+        FAIR     = Label.FAIR.value
+        UNFAIR   = Label.UNFAIR.value
+
+        _select = lambda label : annotated_data[FAIRNESS][FAIRNESS][lambda x : x == label]
+        print('HERE: ', type(annotated_data))
+        annotated_data_fair   = _select(FAIR)
+        annotated_data_unfair = _select(UNFAIR)
+
+        _old_len_fair   = len(self.dataset.training_data_fair)
+        _old_len_unfair = len(self.dataset.training_data_unfair)
+        _m =  'will add annotations:\n'
+        _m += '\t{} fair instances   + {} annotated "fair" instances   = {}  updated fair instance count\n'
+        _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'
+        self.logger.debug(_m.format(
+            _old_len_fair,   len(annotated_data_fair),   _old_len_fair + len(annotated_data_fair),
+            _old_len_unfair, len(annotated_data_unfair), _old_len_fair + len(annotated_data_fair),
+            verbosity = Verbosity.CHATTY
+        ))
+        self.dataset.set_training_data(self.dataset.training_data.index.union(annotated_data.index))
+
     def _get_annotations(self, unlabelled_data: pd.DataFrame) -> pd.DataFrame:
         if self.config_manager.has_human_in_the_loop:
-            return self._get_annotations_human(unlabelled_data)
-        return self._get_annotations_auto(unlabelled_data)
+            annotated = self._get_annotations_human(unlabelled_data)
+        else:
+            annotated = self._get_annotations_auto(unlabelled_data)
+        assert len(set(annotated_data.index).intersection(set(self.dataset.training_data.index))) == 0
+        return annotated
 
     def _get_annotations_auto(self, unlabelled_data: pd.DataFrame) -> pd.DataFrame:
         # Nothing to do

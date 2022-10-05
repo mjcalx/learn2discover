@@ -112,19 +112,32 @@ class DatasetManager:
         self._ftdata = FTDataFrameDataset(self.schema, self.data)
         return self.data
 
-    def split_dataset(self, test_fraction: float) -> (pd.Index, pd.Index):
-        assert self.in_training
-        data = self.data.all_columns()
-        test_record_count = int(len(data) * test_fraction)
-        train_record_count = len(data) - test_record_count
-        test_idxs = pd.Index(self.random.choice(len(data), test_record_count, replace=False))
-        train_idxs = data.loc[~data.index.isin(test_idxs)].index
+    def _get_unlabelled(self) -> pd.Index:
+        """
+        Assumption: unlabelled data were parsed from the same CSV as the rest 
+        of the data, with a value of None
+        """
+        assert self.config.has_human_in_the_loop
+        FAIRNESS = ParamType.FAIRNESS.value
+        data = self.data.flat_index()
 
-        assert len(test_idxs) + len(train_idxs) == len(data)
-        return train_idxs, test_idxs
+        _label_values = [v.value for v in Label]
+        idxs = data[FAIRNESS][~data[FAIRNESS].isin(_label_values)].index
+        assert len(idxs) > 0
+        self.logger.debug(f'{len(idxs)} unlabelled idxs found', verbosity=0)
+        return idxs
 
-    def shuffle(self, data: pd.DataFrame) -> pd.DataFrame: 
+    def shuffle(self, data: pd.DataFrame) -> pd.DataFrame:
+        _num_rows = 2
+        _show = lambda df : (len(df[:_num_rows:]), df[:_num_rows:])
+        self.logger.debug('before shuffle(): first {} rows:\n{}'.format(*_show(data)), verbosity=2)
         _lst_idxs = list(data.index)
         self.random.shuffle(_lst_idxs)
-        return data.loc[pd.Index(_lst_idxs)]
+        shuffled = data.loc[pd.Index(_lst_idxs)]
+        self.logger.debug('after shuffle(): first {} rows:\n{}'.format(*_show(shuffled)), verbosity=2)
+        return shuffled
 
+    def choose_random_unlabelled(self, unlabelled_idxs: pd.Index) -> pd.Index:
+        n = self.config.unlabelled_sampling_size
+        return pd.Index(self.random.choice(list(unlabelled_idxs), n, replace=False))
+        

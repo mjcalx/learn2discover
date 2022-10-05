@@ -96,10 +96,12 @@ class ConfigManager:
         self.layers                = self.configs.get('model_hyperparameters').get('layers')
 
         self.test_fraction         = self.configs.get('training_settings').get('test_fraction')
+        self.unlabelled_fraction   = self.configs.get('training_settings').get('simulated_unlabelled_fraction')
         self.min_evaluation_items  = self.configs.get('training_settings').get('min_evaluation_items')
         self.min_training_items    = self.configs.get('training_settings').get('min_training_items')
         self.has_human_in_the_loop = self.configs.get('training_settings').get('has_human_in_the_loop')
-        self.query_strategies      = self.configs.get('training_settings').get('query_strategies')
+        self.query_strategy        = self.configs.get('training_settings').get('query_strategy')
+        self.unlabelled_sampling_size = self.configs.get('training_settings').get('unlabelled_sampling_size')
 
         self.model_path          = self.configs.get('output_settings').get('model_path')
         self.training_path       = self.configs.get('output_settings').get('training_path')
@@ -112,4 +114,3 @@ class ConfigManager:
 
         assert isinstance(self.column_names_included, bool)
         assert isinstance(self.index_column_included, bool)
-        assert isinstance(self.query_strategies, list)

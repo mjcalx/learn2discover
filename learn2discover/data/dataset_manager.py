@@ -13,6 +13,9 @@ from data.schema import Schema, VarType
 from data.loader import Loader
 from data.data_classes import DataAttributes, Label, Outcome, ParamType
 from utils.validation_utils import ValidationUtils
+from configs.config_manager import ConfigManager
+from data.dataset_factory import DatasetFactory
+from data.facades import DatasetFacade
 
 class DatasetManager:
     instance = None
@@ -24,16 +27,16 @@ class DatasetManager:
         """
         self.random = np.random.RandomState(seed)
         self.logger = LoggerFactory.get_logger(__class__.__name__)
-        self._ftdata = None
         self._attributes = attributes
-        
+        self.config = ConfigManager.get_instance()
+
         self.loader = Loader()
         self.schema, self._loaded_data = self.loader.load_data()
         self.in_training = self.loader.is_training_mode
 
         if self.in_training:
-            self._ftdata = FTDataFrameDataset(self.schema, self._loaded_data)
-            self._tensors = FTTensorDataset(self.schema, self._ftdata)
+            self._data = DatasetFactory.make(self.schema, self._loaded_data, self.random)
+            self._attributes = self.data.attributes
 
         DatasetManager.instance = self
     
@@ -45,7 +48,7 @@ class DatasetManager:
     
     @property
     def tensor_data(self) -> TorchDataset | None:
-        return self._tensors if self.in_training else None
+        return self.data if self.in_training else None
 
     @property
     def data(self) -> FTDataFrameDataset | pd.DataFrame:
@@ -54,7 +57,7 @@ class DatasetManager:
         DataFrame otherwise.
         """
         if self.in_training:
-            return self._ftdata
+            return self._data
         return self._loaded_data
 
     @property
@@ -87,8 +90,8 @@ class DatasetManager:
         outcomes.rename(ParamType.OUTCOME.value, inplace=True)
         fairness_labels.rename(ParamType.FAIRNESS.value, inplace=True)
 
-        self.data[ParamType.OUTCOME.value] = outcomes
-        self.data[ParamType.FAIRNESS.value] = fairness_labels
+        self.data.outcomes = outcomes
+        self.data.fairness_labels = fairness_labels
 
         X = self.attributes.inputs
         Y = self.attributes.outputs

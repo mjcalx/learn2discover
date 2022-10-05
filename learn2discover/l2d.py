@@ -51,7 +51,7 @@ class Learn2Discover:
             self.dataset_manager = DatasetManager()
             self.logger.debug('Loaded DatasetManager.')
             
-            self.query_strategies = [QueryStrategyFactory().get_strategy(t) for t in self.config_manager.query_strategies]
+            self.query_strategy = QueryStrategyFactory().get_strategy(self.config_manager.query_strategy) 
             
             self.test_fraction = self.config_manager.test_fraction
             self.min_evaluation_items = self.config_manager.min_evaluation_items

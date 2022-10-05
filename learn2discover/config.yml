@@ -10,9 +10,11 @@ model_hyperparameters:
 
 training_settings:
   test_fraction: 0.2
+  simulated_unlabelled_fraction: 0.1
   min_evaluation_items: 200
   min_training_items: 50
-  query_strategies: [entropy, least_confidence, margin_sampling]
+  unlabelled_sampling_size: 10
+  query_strategy: least_confidence
   has_human_in_the_loop: false
 
 dataset_settings:

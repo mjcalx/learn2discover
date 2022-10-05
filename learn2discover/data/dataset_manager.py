@@ -38,6 +38,7 @@ class DatasetManager:
         if self.in_training:
             self._data = DatasetFactory.make(self.schema, self._loaded_data, self.random)
             self._attributes = self.data.attributes
+            del self._loaded_data
 
         DatasetManager.instance = self
     

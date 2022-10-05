@@ -6,6 +6,7 @@ import itertools
 from data.schema import Schema
 from data.data_classes import ParamType, VarType, DataAttributes, Label
 from utils.validation_utils import ValidationUtils
+from functools import reduce
 
 class FTDataFrameDataset:
     def __init__(self, schema: Schema, multi_indexed_data: pd.DataFrame):
@@ -16,7 +17,9 @@ class FTDataFrameDataset:
         assert isinstance(multi_indexed_data.columns, pd.MultiIndex)
         assert isinstance(schema, Schema)
         self.schema = schema
-        self.dataframe = multi_indexed_data
+        drop_nan_scoretext = lambda df : df.drop(index=df[df.isna()['OUTPUTS']['ScoreText'] == True].index).reset_index(drop=True)
+        preprocessors : List[Callable[[pd.DataFrame], pd.DataFrame]] = [drop_nan_scoretext]
+        self.dataframe = reduce(lambda f, g: g(f), preprocessors, multi_indexed_data)
 
         # todo attribute_data is now flat_index
         self._flat = None
@@ -31,6 +34,7 @@ class FTDataFrameDataset:
         self._preprocess_categorical_variables()
         self._preprocess_categorical_variables(self.fairness_labels)
         self._reassign_attribute_data()
+        self.flat_index()
         # TODO cast to types
 
     def __len__(self):

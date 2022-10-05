@@ -101,39 +101,11 @@ class Learn2Discover:
         return vec.view(1, -1)
     
 
-    def get_low_conf_unlabeled(self, model, unlabeled_data, number=80, limit=10000):
-        confidences = []
-        if limit == -1: # we're predicting confidence on *everything* this will take a while
-            print("Get confidences for unlabeled data (this might take a while)")
-        else: 
-            # only apply the model to a limited number of items
-            shuffle(unlabeled_data)
-            unlabeled_data = unlabeled_data[:limit]
-        with torch.no_grad():
-            for item in unlabeled_data:
-                textid = item[0]
-                if textid in self.already_labeled:
-                    continue
-                item[3] = "random_remaining"
-                text = item[1]
 
-                feature_vector = self.make_feature_vector(text.split(), self.feature_index)
-                log_probs = model(feature_vector)
 
-                # get confidence that it is related
-                prob_related = math.exp(log_probs.data.tolist()[0][1]) 
-                
-                if prob_related < 0.5:
-                    confidence = 1 - prob_related
-                else:
-                    confidence = prob_related 
 
-                item[3] = "low confidence"
-                item[4] = confidence
-                confidences.append(item)
 
-        confidences.sort(key=lambda x: x[4])
-        return confidences[:number:]
+
 
 
 

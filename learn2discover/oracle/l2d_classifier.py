@@ -13,7 +13,7 @@ from sklearn.metrics import (
     classification_report, confusion_matrix, accuracy_score, roc_curve, 
     roc_auc_score, precision_score, recall_score, f1_score
 )
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 
 from configs.config_manager import ConfigManager
@@ -22,9 +22,25 @@ from data.data_classes import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 
+class HalvedCeilingFn:
+    """
+    A sample embedding size function used for this classifier. 
+
+    Calculate embedding as the ceiling of half the number of categories in a 
+    column, capped by `upper_bound`.
+
+    Return a list of 2-Tuples of form (old_size, embedding_size), where 
+    old_size is the number of categories in a given column.
+    """
+    def __call__(self, num_categories_per_col: List[int], upper_bound: int=50) -> List[Tuple[int,int]]:
+        return [(n, min(upper_bound, (n+1)//2)) for n in num_categories_per_col]
+
+    @property
+    def name(self):
+        return 'Halved Ceiling Embedding'
 
 class L2DClassifier(nn.Module):
-    def __init__(self, embedding_size, num_numerical_cols):
+    def __init__(self, num_numerical_cols):
         super(L2DClassifier, self).__init__()
         cfg = ConfigManager.get_instance()
         self.datamgr = DatasetManager.get_instance()
@@ -36,13 +52,23 @@ class L2DClassifier(nn.Module):
         self.layers = cfg.layers
         self.dropout_rate = cfg.dropout_rate
 
-        self.embeddings = nn.ModuleList([nn.Embedding(ni, nf) for ni, nf in embedding_size])
+        ####### EMBEDDING SIZE FUNCTION #######
+        self.embedding_size_function = HalvedCeilingFn()
+        embedding_fn_settings = {'num_categories_per_col' : self.datamgr.data.categorical_column_sizes}
+
+        _m = 'Using embedding size function : {}'
+        self.logger.debug(_m.format(self.embedding_size_function.name), verbosity=Verbosity.BASE)
+
+        categorical_embedding_size = self.embedding_size_function(**embedding_fn_settings)
+        ########################################
+
+        self.embeddings = nn.ModuleList([nn.Embedding(ni, nf) for ni, nf in categorical_embedding_size])
         self.embedding_dropout = nn.Dropout(self.dropout_rate)
         self.batch_norm_num = nn.BatchNorm1d(num_numerical_cols)
-
         self.stack = None
-        _td = self.datamgr.tensor_data
-        num_categorical_cols = sum([nf for ni, nf in embedding_size])
+
+        _td = self.datamgr.data
+        num_categorical_cols = sum([nf for ni, nf in categorical_embedding_size])
         self._build(len_input=num_categorical_cols+len(_td.numerical_columns))
         self.logger.debug(f'NUM COLUMNS: CAT {len(_td.categorical_columns)}, NUM {len(_td.numerical_columns)}', verbosity=Verbosity.CHATTY)
         self.logger.debug(f'INIT EMBEDDING SUM CATEGORICAL: {num_categorical_cols}', verbosity=Verbosity.CHATTY)

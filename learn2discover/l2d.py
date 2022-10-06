@@ -106,13 +106,9 @@ class Learn2Discover:
 
     def _learn(self):
         # Train new model with current training data
-        embedding_size_function = lambda num_categories_per_col: [(n, min(50, (n+1)//2)) for n in num_categories_per_col]
         numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
 
-        embedding_sizes = self.dataset.categorical_embedding_sizes
-        numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
-
-        self.classifier = L2DClassifier(embedding_sizes, numerical_data.shape[1])
+        self.classifier = L2DClassifier(numerical_data.shape[1])
         
         model_path = self._train_and_evaluate(
             training_idxs=self.dataset.training_data.index,

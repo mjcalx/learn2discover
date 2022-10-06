@@ -76,20 +76,13 @@ class Learn2Discover:
         single_iteration_test_flag = False
         while not self.stopping_criterion() and not single_iteration_test_flag:
             self._learn()
-            self._annotate_and_retrain()
-            
             single_iteration_test_flag = True
-        self.logger.info('Stopping criterion reached. Exiting...', verbosity=Verbosity.BASE)
-
-    def _train_and_evaluate(self, training_idxs: pd.Index, test_idxs: pd.Index) -> str:
-        train_idxs_shuffled = self.dataset_manager.shuffle(training_idxs)
-        test_idxs_shuffled = self.dataset_manager.shuffle(test_idxs)
-        
-        self.classifier.fit(train_idxs_shuffled)  # Training
-        fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)  # Evaluation
-        
+        self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
+        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.evaluation_data.index)
+        fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)
         model_path = self.classifier.save_model(fscore, auc)
-        return model_path
+        self.logger.info(f"[fscore, auc] = [{fscore}, {auc}]")
+        self.logger.info(f"Model saved to:  {model_path}")
 
     def _learn(self):
         """
@@ -99,11 +92,9 @@ class Learn2Discover:
         numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
         self.classifier = L2DClassifier(numerical_data.shape[1])
         
-        model_path = self._train_and_evaluate(
-            training_idxs=self.dataset.training_data.index,
-            test_idxs=self.dataset.evaluation_data.index
-        )
-        self.classifier.load_state_dict(torch.load(model_path))
+        train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.training_data.index)
+        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.evaluation_data.index)
+        self.classifier.fit(train_idxs_shuffled)
 
         
         ##### TAKE SAMPLE OF UNLABELLED DATA AND PREDICT THE LABELS #####
@@ -134,27 +125,12 @@ class Learn2Discover:
         self._update_training_data(annotated_data)
         self.classifier.train()  # stop querying the model and continue training
 
-    def _annotate_and_retrain(self):
-        self.logger.debug("Annotating new data to train model...")
-            
-
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
 
-        
 
-        model_path = self._train_and_evaluate(
-            training_idxs=self.dataset.training_data.index,
-            test_idxs=self.dataset.evaluation_data.index
-        )
-        ###########################################
-        self.classifier.load_state_dict(torch.load(model_path))
-
-        accuracies = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
-        self.logger.info(f"[fscore, auc] = {accuracies}")
-        self.logger.info(f"Model saved to:  {model_path}")
 
     def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
         FAIRNESS = ParamType.FAIRNESS.value

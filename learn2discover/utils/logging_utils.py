@@ -1,4 +1,5 @@
 import numpy as np
+from enum import Enum
 from datetime import datetime
 from configs.config_manager import ConfigManager
 
@@ -9,6 +10,7 @@ class LoggingUtils:
     def __init__(self):
         self.primary_logger_type = ConfigManager.get_instance().primary_logger_type
         self.log_level = ConfigManager.get_instance().log_level
+        self.verbosity = ConfigManager.get_instance().verbosity
 
     @staticmethod
     def get_instance():
@@ -22,7 +24,7 @@ class LoggingUtils:
             print(message)
 
     def info(self, message):
-        if self.log_level == 'info':
+        if self.log_level in ['info', 'debug']:
             print(message)
 
     def warn(self, message):
@@ -37,3 +39,14 @@ class LoggingUtils:
 
     def get_log_level(self):
         return self.log_level
+
+    def get_verbosity(self):
+        return self.verbosity
+
+class Verbosity(Enum):
+    BASE = 0
+    CHATTY = 1
+    TALKATIVE = 2
+    VERBOSE = 3
+    INCESSANT = 4
+    SESQUIPEDALIAN = 5

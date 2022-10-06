@@ -1,25 +1,37 @@
 sut_settings:
   model_path: models
 
+model_hyperparameters:
+  epochs: 50
+  learning_rate: 0.1
+  selections_per_epoch: 40
+  dropout_rate: 0.5
+  layers: [200, 100, 50]
+
 training_settings:
-  query_strategies: [entropy, least_confidence, margin_sampling]
+  test_fraction: 0.6
+  simulated_unlabelled_fraction: 0.3
+  min_evaluation_items: 200
+  min_training_items: 50
+  unlabelled_sampling_size: 20
+  query_strategy: least_confidence
+  has_human_in_the_loop: false
+  stopping_criterion:
+    choice: iterations
+    settings:
+      iterations:
+        num_iterations: 5
 
 dataset_settings:
-  schema_file: data/schema_compas.yml
-  data_file: ../datasets/original/COMPAS/compas-scores-raw.csv
-  index_column_included: false
+  schema_file: ../datasets/schemas/schema_compas.yml
+  data_file: ../datasets/generated/compas.csv
+  index_column_included: true
   delimiter: ','
 
 output_settings:
   model_path: models
-  training_path: data/german/training_data
-  validation_path: data/german/validation_data
-  evaluation_path: data/german/evaluation_data
-  unlabelled_path: data/german/unlabelled_data
-  fair_csv_filename: fair.csv
-  unfair_csv_filename: unfair.csv
-
 
 log:
   primary_logger_type: console
   log_level: debug
+  verbosity: 0

@@ -52,6 +52,10 @@ class FTSplitDataset:
         self._train_idxs = idxs
         self._training_data, self._training_data_fair, self._training_data_unfair =  self._get_data(idxs)
         self._update_training_count()
+        if self._unlabelled_idxs is not None:
+            overlapping_idxs = self.unlabelled_idxs.intersection(self._train_idxs)
+            new_unlabelled_idxs = self.unlabelled_idxs.difference(overlapping_idxs)
+            self.set_unlabelled_data(new_unlabelled_idxs)
 
     def set_evaluation_data(self, idxs: pd.Index) -> None:
         self._test_idxs = idxs

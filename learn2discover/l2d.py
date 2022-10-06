@@ -73,8 +73,8 @@ class Learn2Discover:
             exit()
 
     def run(self):
-        
-
+        numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
+        self.classifier = L2DClassifier(numerical_data.shape[1])
         while not self.stopping_criterion():
             self.stopping_criterion.report()
             self.active_learning_loop()
@@ -91,14 +91,10 @@ class Learn2Discover:
         Perform the logic of the active learning loop
         """
         ##### TRAIN MODEL USING SET OF CURRENTLY LABELLED DATA #####
-        numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
-        self.classifier = L2DClassifier(numerical_data.shape[1])
-        
         train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.training_data.index)
-        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.evaluation_data.index)
         self.classifier.fit(train_idxs_shuffled)
-
         
+
         ##### TAKE SAMPLE OF UNLABELLED DATA AND PREDICT THE LABELS #####
         self.classifier.eval()  # stop training in order to query single samples
 

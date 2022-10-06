@@ -92,51 +92,58 @@ class Learn2Discover:
         return model_path
 
     def _learn(self):
-        # Train new model with current training data
+        """
+        Perform the logic of the active learning loop
+        """
+        ##### TRAIN MODEL USING SET OF CURRENTLY LABELLED DATA #####
         numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
-
         self.classifier = L2DClassifier(numerical_data.shape[1])
         
         model_path = self._train_and_evaluate(
             training_idxs=self.dataset.training_data.index,
             test_idxs=self.dataset.evaluation_data.index
         )
-
         self.classifier.load_state_dict(torch.load(model_path))
-        
-        # stop training in order to query single samples
-        self.classifier.eval()
 
-        # get 100 items per iteration with the following breakdown of strategies:
+        
+        ##### TAKE SAMPLE OF UNLABELLED DATA AND PREDICT THE LABELS #####
+        self.classifier.eval()  # stop training in order to query single samples
+
         sampled_idxs = self.dataset_manager.choose_random_unlabelled(self.dataset.unlabelled_idxs)
-        _m = 'run(): selected random sample of {} unlabelled instances'
-        self.logger.debug(_m.format(len(sampled_idxs)))
-
         random_items = self.dataset.unlabelled_data.loc[sampled_idxs]
+
+        _m = 'run(): selected random sample of {} unlabelled instances'
+        self.logger.debug(_m.format(len(sampled_idxs)), verbosity=Verbosity.CHATTY)
         self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=Verbosity.CHATTY)
-        
+
+
+        ##### APPLY QUERY STRATEGY #####
+        # Sample unlabelled items per iteration based on query strategy
         sample_unlabelled = self.query_strategy.query(self.classifier, random_items)
 
-        # stop using existing model for queries and continue training
-        self.classifier.train()
- 
         idxs_shuffled = self.dataset_manager.shuffle(sample_unlabelled.index)
         shuffled_sample_unlabelled = sample_unlabelled.loc[idxs_shuffled]
 
+
+        ##### QUERY ORACLE FOR TRUE LABELS FOR THE INSTANCES #####
         # pass responsibility for labelling to attached oracle
         annotated_data = self._get_annotations(shuffled_sample_unlabelled)
 
+
+        ##### ADD LABELLED INSTANCES TO THE SET OF LABELLED DATA #####
         self._update_training_data(annotated_data)
+        self.classifier.train()  # stop querying the model and continue training
 
     def _annotate_and_retrain(self):
         self.logger.debug("Annotating new data to train model...")
             
-        ########################################### train_model
+
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
-        self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate}', verbosity=Verbosity.BASE)
+
+        
 
         model_path = self._train_and_evaluate(
             training_idxs=self.dataset.training_data.index,

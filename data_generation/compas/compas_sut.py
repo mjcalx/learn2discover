@@ -19,8 +19,10 @@ class Compas(SystemUnderTest):
 
     def evaluate_outcomes(self, outputs: pd.DataFrame) -> pd.Series:
         """
-        Determines the outcome for each data instance based on its output values
+        Determines the outcome for each data instance based on its output values.
+
+        Return a pandas Series of strings of Outcome values.
         """
         self.logger.debug("Evaluating SUT outcomes...")
-        assign_outcome = lambda x : Outcome.FAIL if str(x["ScoreText"]) in ["High", "Medium", "nan"] else Outcome.PASS
+        assign_outcome = lambda x : Outcome.FAIL.value if str(x["ScoreText"]) in ["High", "Medium", "nan"] else Outcome.PASS.value
         return outputs.apply(assign_outcome, axis=1)

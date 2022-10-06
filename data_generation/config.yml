@@ -10,3 +10,4 @@ output_settings:
 log:
   primary_logger_type: console
   log_level: debug
+  verbosity: 0

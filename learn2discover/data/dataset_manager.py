@@ -92,8 +92,8 @@ class DatasetManager:
         outcomes.rename(ParamType.OUTCOME.value, inplace=True)
         fairness_labels.rename(ParamType.FAIRNESS.value, inplace=True)
 
-        self.data.outcomes = outcomes
-        self.data.fairness_labels = fairness_labels
+        self.data[ParamType.OUTCOME.value]  = outcomes
+        self.data[ParamType.FAIRNESS.value] = fairness_labels
 
         X = self.attributes.inputs
         Y = self.attributes.outputs

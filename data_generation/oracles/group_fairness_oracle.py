@@ -21,6 +21,9 @@ class GroupFairnessOracle(AbstractMockOracle):
         self.sensitive_attributes = sensitive_attributes
 
     def set_labels(self, outcomes: pd.Series) -> pd.Series:
+        """
+        Return a pandas Series of strings of Label values
+        """
         dataset_manager = DatasetManager.get_instance()
         self.logger.debug("Evaluating fairness...")
         group_fairness = {}
@@ -54,7 +57,7 @@ class GroupFairnessOracle(AbstractMockOracle):
         for sensitive_value in scores.keys():
             filtered = data_inputs[sensitive_attribute][lambda x : x == sensitive_value]
             value_count = len(filtered)
-            pass_count = len(outcomes[filtered.index][ lambda x : x == Outcome.PASS ])
+            pass_count = len(outcomes[filtered.index][ lambda x : x == Outcome.PASS.value ])
             scores[sensitive_value] = pass_count / value_count
         return scores
 

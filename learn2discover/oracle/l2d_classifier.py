@@ -112,6 +112,7 @@ class L2DClassifier(nn.Module):
 
     def fit(self, idxs: pd.Index, epochs=None) -> None:
         self.logger.debug("Starting training...", verbosity=Verbosity.CHATTY)
+        self.logger.debug(f'Will train with learning_rate={self.learning_rate}', verbosity=Verbosity.BASE)
         self.len_data = len(idxs)
         epochs = epochs if epochs is not None else self.epochs
         get_categorical = lambda _dct_tensors : _dct_tensors[VarType.CATEGORICAL]

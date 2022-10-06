@@ -75,7 +75,7 @@ class L2DClassifier(nn.Module):
 
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
-        self.loss_function = nn.CrossEntropyLoss()
+        self.loss_function = nn.NLLLoss()
         self.metrics = ['fscore', 'auc']
     
     def _build(self, len_input: int):
@@ -87,6 +87,8 @@ class L2DClassifier(nn.Module):
             all_layers.append(nn.Dropout(self.dropout_rate))
             len_input = i
         all_layers.append(nn.Linear(self.layers[-1], len(Label)))
+        all_layers.append(nn.LogSoftmax(1))
+
 
         self.stack = nn.Sequential(*all_layers)
 

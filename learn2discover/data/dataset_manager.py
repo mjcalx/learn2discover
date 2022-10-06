@@ -1,11 +1,18 @@
 from __future__ import annotations
 import numpy as np
+import pandas as pd
+import torch
+from copy import copy
 from itertools import chain
+
+from data.ft_dataframe_dataset import FTDataFrameDataset
+from data.ft_tensor_dataset import FTTensorDataset
+
+from loggers.logger_factory import LoggerFactory
 from data.schema import Schema, VarType
 from data.loader import Loader
 from data.data_classes import DataAttributes, Label, Outcome, ParamType
-from loggers.logger_factory import LoggerFactory
-import pandas as pd
+from utils.validation_utils import ValidationUtils
 
 class DatasetManager:
     instance = None
@@ -17,34 +24,18 @@ class DatasetManager:
         """
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.random = np.random.RandomState(random_state)
-        self.loader = Loader()
-        self.schema, self.data = self.loader.load_data()
 
-        # Init properties
-        self.attributes = attributes
-        self.X = None
-        self.Y = None
-        self.dataset = None
-        self.outcomes = pd.Series([None]*len(self.data))
-        self.fairness_labels = pd.Series([None]*len(self.data))
-
-        # Repopulate properties from CSV (in training mode)
-        #! Assumptions:
-        #! - Data is never multiindexed in generation mode
-        #! - Data is always multiindexed in training mode
-        if isinstance(self.data.columns, pd.MultiIndex):
-            idxs = [self.data[x].columns for x in [ParamType.INPUTS.value, ParamType.OUTPUTS.value]]
-            attribute_index = pd.Index(list(chain(*idxs)))
-            inputs, outputs = [list(x) for x in idxs]
-            self.attributes = DataAttributes(inputs, outputs)
-            self.dataset = self.data
-            self.data = self.data.droplevel(0, axis=1)[attribute_index]
-            self.outcomes = self.dataset[ParamType.OUTCOME.value][ParamType.OUTCOME.value]
-            self.fairness_labels = self.dataset[ParamType.FAIRNESS.value][ParamType.FAIRNESS.value]
-
-        if self.attributes is not None:
-            self.parse_data_instances()
+        self._ftdata = None
+        self._attributes = attributes
         
+        self.loader = Loader()
+        self.schema, self._loaded_data = self.loader.load_data()
+        self.in_training = self.loader.is_training_mode
+
+        if self.in_training:
+            self._ftdata = FTDataFrameDataset(self.schema, self._loaded_data)
+            self._tensors = FTTensorDataset(self.schema, self._ftdata)
+
         DatasetManager.instance = self
     
     @staticmethod
@@ -52,63 +43,66 @@ class DatasetManager:
         if DatasetManager.instance is None:
             DatasetManager.instance = DatasetManager()
         return DatasetManager.instance
+    
+    def columns_by_type(self, variable_type=None) -> Dict[VarType, list]:
+        assert type(variable_type) in [VarType, type(None)]
+        self.schema.vars_by_type(variable_type)
+        if variable_type is None:
+            return self.schema.vars_by_type()
+        return self.schema.vars_by_type(variable_type)
 
-    def parse_data_instances(self, attributes: DataAttributes=None) -> None:
-        if self.attributes is None and attributes is None:
-            raise ValueError("Unset DataManager.attributes")
-        if attributes is not None:
-            self.attributes = attributes
-        self.X = self.data[self.attributes.inputs]
-        self.Y = self.data[self.attributes.outputs]
+    @property
+    def data(self) -> FTDataFrameDataset | pd.DataFrame:
+        """
+        Return a reference to the stored FTDataFrameDataset if in training, or a pandas 
+        DataFrame otherwise.
+        """
+        if self.in_training:
+            return self._ftdata
+        return self._loaded_data
 
-    def set_outcomes(self, outcomes: pd.Series) -> None:
-        m = '"outcomes" must be of type Series[Outcome]'
-        assert all(outcomes.apply(lambda x : isinstance(x, Outcome))), m
-        n = '"outcomes" must have same length as data'
-        assert len(self.outcomes) == len(self.X), n
+    @property
+    def attributes(self) -> DataAttributes:
+        return self._attributes
 
-        self.outcomes = outcomes
-        self.outcomes.rename(ParamType.OUTCOME.value, inplace=True)
-
-    def set_fairness_labels(self, fairness_labels: pd.Series) -> None:
-        m = '"fairness_labels" must be of type Series[Label]'
-        assert all(fairness_labels.apply(lambda x : isinstance(x, Label))), m
-        n = '"fairness_labels" must have same length as data'
-        assert len(self.fairness_labels) == len(self.X), n
-
-        self.fairness_labels = fairness_labels
-        self.fairness_labels.rename(ParamType.FAIRNESS.value, inplace=True)
-
-    def format_dataset(self) -> pd.DataFrame:
+    def get_fairness_testing_dataset(self, outcomes: pd.Series, fairness_labels: pd.Series) -> FTDataFrameDataset:
         """
         Combine and reindex the dataset with SUT outcomes and fairness oracle labels.
 
         Returns:
             pd.DataFrame: _description_
         """
-        if self.dataset is not None:
-            return self.dataset
-        m = '"All data must be instantiated before calling "format_dataset()"'
-        data = [self.X, self.Y, self.outcomes, self.fairness_labels]
-        assert all([d is not None for d in data]), m
+        if self.in_training:
+            return self.data
+        
+        ValidationUtils.validate_outcomes_series(outcomes)
+        ValidationUtils.validate_fairness_labels_series(fairness_labels)
 
-        df = pd.concat([self.data, self.outcomes, self.fairness_labels], axis=1)
+        outcomes.rename(ParamType.OUTCOME.value, inplace=True)
+        fairness_labels.rename(ParamType.FAIRNESS.value, inplace=True)
+
+        self.data[ParamType.OUTCOME.value] = outcomes
+        self.data[ParamType.FAIRNESS.value] = fairness_labels
+
+        X = self.attributes.inputs
+        Y = self.attributes.outputs
+        outcome_idx = ParamType.OUTCOME.value
+        fairness_idx = ParamType.FAIRNESS.value
+
         levels = [
                 *[ParamType.INPUTS.value]*len(self.attributes.inputs), 
                 *[ParamType.OUTPUTS.value]*len(self.attributes.outputs), 
                 ParamType.OUTCOME.value, ParamType.FAIRNESS.value]
         codes = [*self.attributes.inputs, *self.attributes.outputs, 
-                self.outcomes.name, self.fairness_labels.name]
+                outcome_idx, fairness_idx]
         assert len(levels) == len(codes)
 
         tup = list(zip(*[levels, codes]))
         cols = pd.MultiIndex.from_tuples(tup, names=('param_type', 'param'))
-        df.columns = cols
-        self.dataset = df
-        return self.dataset
+        self.data.columns = cols
+        self._ftdata = FTDataFrameDataset(self.schema, self.data)
+        return self.data
 
-    def save_dataset(self):
-        if self.dataset is None:
-            self.logger.debug("Labelled dataset is incomplete and will not be written.")
-            raise ValueError()
+    def split_dataset() -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+        pass
         

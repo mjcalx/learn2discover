@@ -73,10 +73,12 @@ class Learn2Discover:
             exit()
 
     def run(self):
-        single_iteration_test_flag = False
-        while not self.stopping_criterion() and not single_iteration_test_flag:
-            self._learn()
-            single_iteration_test_flag = True
+        
+
+        while not self.stopping_criterion():
+            self.stopping_criterion.report()
+            self.active_learning_loop()
+        
         self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
         test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.evaluation_data.index)
         fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)
@@ -84,7 +86,7 @@ class Learn2Discover:
         self.logger.info(f"[fscore, auc] = [{fscore}, {auc}]")
         self.logger.info(f"Model saved to:  {model_path}")
 
-    def _learn(self):
+    def active_learning_loop(self):
         """
         Perform the logic of the active learning loop
         """
@@ -138,7 +140,6 @@ class Learn2Discover:
         UNFAIR   = Label.UNFAIR.value
 
         _select = lambda label : annotated_data[FAIRNESS][FAIRNESS][lambda x : x == label]
-        print('HERE: ', type(annotated_data))
         annotated_data_fair   = _select(FAIR)
         annotated_data_unfair = _select(UNFAIR)
 

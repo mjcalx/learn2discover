@@ -56,12 +56,9 @@ class Learn2Discover:
             self.query_strategy = QueryStrategyFactory().get_strategy(self.config_manager.query_strategy)
             self.stopping_criterion = StoppingCriterionFactory().get_stopping_criterion(self.config_manager.stopping_criterion)
 
-            self.test_fraction = self.config_manager.test_fraction
-            
             _uf = self.config_manager.unlabelled_fraction
             self.unlabelled_fraction = _uf if _uf is not None else 0
-            self.min_evaluation_items = self.config_manager.min_evaluation_items
-            self.min_training_items = self.config_manager.min_training_items
+            self.test_fraction = self.config_manager.test_fraction
 
             # Human-specific params
             if self.config_manager.has_human_in_the_loop: 
@@ -78,17 +75,8 @@ class Learn2Discover:
     def run(self):
         single_iteration_test_flag = False
         while not self.stopping_criterion() and not single_iteration_test_flag:
-            if self.dataset.evaluation_count <  self.min_evaluation_items:
-                self._fill_evaluation_data()
-         
-            elif self.dataset.training_count < self.min_training_items:
-                self._fill_training_data()
-
-            else:
-                self._learn()
-
-            if self.dataset.training_count > self.min_training_items:
-                self._annotate_and_retrain()
+            self._learn()
+            self._annotate_and_retrain()
             
             single_iteration_test_flag = True
         self.logger.info('Stopping criterion reached. Exiting...', verbosity=Verbosity.BASE)
@@ -141,18 +129,14 @@ class Learn2Discover:
         self._update_training_data(annotated_data)
 
     def _annotate_and_retrain(self):
-        self.logger.debug("Retraining model with new data")
+        self.logger.debug("Annotating new data to train model...")
             
         ########################################### train_model
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
-        # UPDATE OUR DATA AND (RE)TRAIN MODEL WITH NEWLY ANNOTATED DATA
-        # vocab_size = create_features() # TODO: replace this method
-        # TODO: custom labels
         self.logger.debug(f'Will train with learning_rate={self.config_manager.learning_rate}', verbosity=Verbosity.BASE)
-        # epochs training
 
         model_path = self._train_and_evaluate(
             training_idxs=self.dataset.training_data.index,
@@ -164,58 +148,6 @@ class Learn2Discover:
         accuracies = self.classifier.evaluate_model(self.dataset.evaluation_data.index)
         self.logger.info(f"[fscore, auc] = {accuracies}")
         self.logger.info(f"Model saved to:  {model_path}")
-
-
-    def _fill_training_data(self):
-        # lets create our first training data! 
-        self.logger.debug("Adding to initial training data...")
-
-        idxs = self.dataset_manager.shuffle(data.index)
-        needed = self.min_training_items - training_count
-        data = data[:needed]
-        # print(str(needed)+" more annotations needed")
-
-        data = self._get_annotations(data)
-
-        fair = []
-        unfair = []
-
-        for item in data:
-            label = item[2]
-            if label == "1":
-                fair.append(item)
-            elif label == "0":
-                unfair.append(item)
-
-        # append training data
-        self.append_data(self.training_data_unfair, fair)
-        self.append_data(self.training_data_fair, unfair)
-
-    def _fill_evaluation_data(self):
-        #Keep adding to evaluation data first
-        self.logger.debug("Adding to evaluation data...")
-
-        shuffle(data)
-        needed = self.min_evaluation_items - evaluation_count
-        data = data[:needed]
-        self.logger.debug(f'{needed} more annotations needed')
-
-        data = self._get_annotations(data) 
-        
-        fair = []
-        unfair = []
-
-        for item in data:
-            label = item[2]    
-            if label == "1":
-                fair.append(item)
-            elif label == "0":
-                unfair.append(item)
-
-        # append evaluation data 
-        # TODO: implement append method relative to how data is being stored
-        self.append_data(self.evaluation_data_fair, fair)
-        self.append_data(self.evaluation_data_unfair, unfair)
 
     def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
         FAIRNESS = ParamType.FAIRNESS.value

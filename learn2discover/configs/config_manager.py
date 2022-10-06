@@ -104,8 +104,6 @@ class ConfigManager:
 
         self.test_fraction            = TRAINING.get('test_fraction')
         self.unlabelled_fraction      = TRAINING.get('simulated_unlabelled_fraction')
-        self.min_evaluation_items     = TRAINING.get('min_evaluation_items')
-        self.min_training_items       = TRAINING.get('min_training_items')
         self.unlabelled_sampling_size = TRAINING.get('unlabelled_sampling_size')
         self.query_strategy           = TRAINING.get('query_strategy')
         self.has_human_in_the_loop    = TRAINING.get('has_human_in_the_loop')

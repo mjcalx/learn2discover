@@ -1,15 +1,14 @@
 import pandas as pd
 import torch
 import torch.nn as nn
+import math
 from oracle.query_strategies.query_strategy import QueryStrategy
 from data.data_classes import VarType
 from utils.logging_utils import Verbosity
-# from data.dataset_manager import DatasetManager
 
 class LeastConfidenceStrategy(QueryStrategy):
     def __init__(self):
         super(LeastConfidenceStrategy, self).__init__()
-        self.already_labelled = pd.Index([])
 
     @property
     def name(self):
@@ -33,37 +32,22 @@ class LeastConfidenceStrategy(QueryStrategy):
         categorical_tensors = tensors[VarType.CATEGORICAL]
         numerical_tensors = tensors[VarType.NUMERICAL]
         
-        # for each sampled item:
-        #     ignore if already labelled
-        #     get the score from the model
+        # Get the log probabilities from the model and map to a confidence in range [0.5, 1]
         with torch.no_grad():
             for i in range(num_instances):
                 id = idxs[i]
                 self.logger.debug(f'ID={id}', verbosity=Verbosity.TALKATIVE)
 
-                if id in self.already_labelled:
-                    continue
-                
-                ###############################
+                log_probs = classifier(categorical_tensors[None, i], numerical_tensors[None, i])
+                self.logger.debug(f'LOG_PROBS: {log_probs}', verbosity=Verbosity.CHATTY)
 
-                output = classifier(categorical_tensors[None, i], numerical_tensors[None, i])
-                probs = torch.nn.functional.softmax(output, dim=1)
-                prob_fair = probs[0][0] # TODO confirm not [0][1]
-                self.logger.debug(f'PROBS: {probs}', verbosity=Verbosity.TALKATIVE)
-                # feature_vector = self.make_feature_vector(text.split(), self.feature_index)
-                # log_probs = self(feature_vector)
+                log_prob = log_probs.data.tolist()[0][1]
+                prob = math.exp(log_prob)
 
-                # get confidence that it is related
-                # prob_related = math.exp(log_probs.data.tolist()[0][1]) 
-                
-                if prob_fair < 0.5:
-                    confidence = 1 - prob_fair
-                else:
-                    confidence = prob_fair
-
+                confidence = prob if prob >= 0.5 else 1 - prob
                 confidences.append((id,confidence))
 
-        # todo return lowest (highest?) confidence values, up to `number`
+        # Return the ids of least confidence from those sampled
         confidences.sort(key=lambda x: x[1])
         return_idxs = list(zip(*confidences))[0][:number:]
         _m = 'query(): top results: {}'

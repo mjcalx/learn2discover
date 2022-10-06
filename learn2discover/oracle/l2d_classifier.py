@@ -157,11 +157,10 @@ class L2DClassifier(nn.Module):
         """Evaluate the model on the held-out evaluation data
         Return the f-value for disaster-related and the AUC
         """
-        i= 100 # TODO batch? Duplications
         _dict_tensors = self.datamgr.tensor_data.loc(test_idxs)
-        categorical_data = _dict_tensors[VarType.CATEGORICAL][:i]
-        numerical_data     = _dict_tensors[VarType.NUMERICAL][:i]
-        labels        = self.datamgr.tensor_data.tensor_dataset.labels[test_idxs][:i]
+        categorical_data = _dict_tensors[VarType.CATEGORICAL]
+        numerical_data     = _dict_tensors[VarType.NUMERICAL]
+        labels        = self.datamgr.tensor_data.tensor_dataset.labels[test_idxs]
 
         with torch.no_grad():
             y_val = self(categorical_data, numerical_data)

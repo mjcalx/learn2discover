@@ -56,8 +56,6 @@ class Learn2Discover:
             self.query_strategy = QueryStrategyFactory().get_strategy(self.config_manager.query_strategy)
             self.stopping_criterion = StoppingCriterionFactory().get_stopping_criterion(self.config_manager.stopping_criterion)
 
-            _uf = self.config_manager.unlabelled_fraction
-            self.unlabelled_fraction = _uf if _uf is not None else 0
             self.test_fraction = self.config_manager.test_fraction
 
             # Human-specific params
@@ -75,26 +73,26 @@ class Learn2Discover:
     def run(self):
         numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
         self.classifier = L2DClassifier(numerical_data.shape[1])
+
+        print(self.dataset.training_data.count)
+
         while not self.stopping_criterion():
             self.stopping_criterion.report()
             self.active_learning_loop()
         
         self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
-        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.evaluation_data.index)
+
+        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.test_idxs)
         fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)
-        model_path = self.classifier.save_model(fscore, auc)
         self.logger.info(f"[fscore, auc] = [{fscore}, {auc}]")
+
+        model_path = self.classifier.save_model(fscore, auc)
         self.logger.info(f"Model saved to:  {model_path}")
 
     def active_learning_loop(self):
         """
         Perform the logic of the active learning loop
         """
-        ##### TRAIN MODEL USING SET OF CURRENTLY LABELLED DATA #####
-        train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.training_data.index)
-        self.classifier.fit(train_idxs_shuffled)
-        
-
         ##### TAKE SAMPLE OF UNLABELLED DATA AND PREDICT THE LABELS #####
         self.classifier.eval()  # stop training in order to query single samples
 
@@ -105,29 +103,29 @@ class Learn2Discover:
         self.logger.debug(_m.format(len(sampled_idxs)), verbosity=Verbosity.CHATTY)
         self.logger.debug(f'First 5 sampled: \n{random_items[:5]}', verbosity=Verbosity.CHATTY)
 
-
         ##### APPLY QUERY STRATEGY #####
-        # Sample unlabelled items per iteration based on query strategy
+        # Sample unlabelled items based on query strategy
         sample_unlabelled = self.query_strategy.query(self.classifier, random_items)
 
         idxs_shuffled = self.dataset_manager.shuffle(sample_unlabelled.index)
         shuffled_sample_unlabelled = sample_unlabelled.loc[idxs_shuffled]
 
-
         ##### QUERY ORACLE FOR TRUE LABELS FOR THE INSTANCES #####
         # pass responsibility for labelling to attached oracle
         annotated_data = self._get_annotations(shuffled_sample_unlabelled)
 
-
-        ##### ADD LABELLED INSTANCES TO THE SET OF LABELLED DATA #####
+        ##### ADD ANNOTATED INSTANCES TO THE SET OF LABELLED DATA #####
         self._update_training_data(annotated_data)
+
+        ##### TRAIN MODEL USING SET OF CURRENTLY LABELLED DATA #####
         self.classifier.train()  # stop querying the model and continue training
+        train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.train_idxs)
+        self.classifier.fit(train_idxs_shuffled)
 
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
-
 
 
     def _update_training_data(self, annotated_data: pd.DataFrame) -> None:

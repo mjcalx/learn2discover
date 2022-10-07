@@ -19,6 +19,8 @@ training_settings:
     settings:
       iterations:
         num_iterations: 5
+      annotations:
+        num_annotations: 100
 
 dataset_settings:
   schema_file: ../datasets/schemas/schema_compas.yml

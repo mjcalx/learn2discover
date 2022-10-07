@@ -10,10 +10,9 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import sklearn
 from sklearn.metrics import (
-    classification_report, confusion_matrix, accuracy_score, roc_curve, 
-    roc_auc_score, precision_score, recall_score, f1_score
+    accuracy_score, roc_curve, roc_auc_score, precision_score, recall_score, f1_score
 )
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from pathlib import Path
 
 from configs.config_manager import ConfigManager
@@ -76,7 +75,6 @@ class L2DClassifier(nn.Module):
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
         self.loss_function = nn.NLLLoss()
-        self.metrics = ['fscore', 'auc']
     
     def _build(self, len_input: int):
         all_layers = []
@@ -154,14 +152,15 @@ class L2DClassifier(nn.Module):
         plt.savefig('loss-vs-epoch.png')
         plt.clf()
 
-    def evaluate_model(self, test_idxs: pd.Index) -> List[float]:
+
+    def evaluate_model(self, eval_idxs: pd.Index) -> Dict[str, object]:
         """Evaluate the model on the held-out evaluation data
         Return the f-value for disaster-related and the AUC
         """
-        _dict_tensors = self.datamgr.data.loc(test_idxs)
+        _dict_tensors = self.datamgr.data.loc(eval_idxs)
         categorical_data = _dict_tensors[VarType.CATEGORICAL]
         numerical_data     = _dict_tensors[VarType.NUMERICAL]
-        labels        = self.datamgr.data.tensor_labels[test_idxs]
+        labels        = self.datamgr.data.tensor_labels[eval_idxs]
 
         with torch.no_grad():
             y_val = self(categorical_data, numerical_data)
@@ -176,16 +175,15 @@ class L2DClassifier(nn.Module):
         plt.xlabel('False Positive Rate')
         plt.savefig('roc.png')
 
-        self.logger.debug(f'TEST LOSS: {loss:.8f}')
-        self.logger.debug(f'CONFUSION MATRIX:\n{confusion_matrix(labels, y_val)}')
-        self.logger.debug(f'CLASSIFICATION REPORT: \n{classification_report(labels, y_val)}')
-        self.logger.debug(f'ACCURACY: {accuracy_score(labels, y_val)}')
-        self.logger.debug(f'AUC: {auc}')
-
-        # precision = precision_score(labels, y_val)
-        # recall = recall_score(labels, y_val)
+        accuracy = accuracy_score(labels, y_val)
+        precision = precision_score(labels, y_val)
+        recall = recall_score(labels, y_val)
         fscore = f1_score(labels, y_val)
-        return[fscore, auc]
+        results = {'f': fscore, 'auc': auc, 'loss':loss, 
+                   'y_pred':y_val, 'y':labels, 
+                   'tpr':tpr, 'fpr':fpr,
+                   'acc': accuracy, 'precision':precision, 'recall':recall}
+        return results
 
     def save_model(self, fscore, auc):
         fscore = round(fscore,3)

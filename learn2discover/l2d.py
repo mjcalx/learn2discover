@@ -10,6 +10,9 @@ import math
 import datetime
 import re
 import os
+from sklearn.metrics import (
+    classification_report, confusion_matrix
+)
 from random import shuffle
 from collections import defaultdict
 
@@ -83,8 +86,21 @@ class Learn2Discover:
         self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
 
         test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.test_data.index)
-        fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)
-        self.logger.info(f"[fscore, auc] = [{fscore}, {auc}]")
+        result = self.classifier.evaluate_model(test_idxs_shuffled)
+        fscore = result['f']
+        auc    = result['auc']
+        labels = result['y']
+        y_pred  = result['y_pred']
+        _m =  'RESULTS:\n'
+        _m += 'Confusion Matrix: {}\n'.format(confusion_matrix(labels, y_pred))
+        _m += f'Test Loss = {result["loss"]}\n'
+        _m += f'Accuracy  = {result["acc"]}\n'
+        _m += f'fscore    = {fscore}\n'
+        _m += f'AUC       = {result["auc"]}\n'
+        _m += f'Precision = {result["precision"]}\n'
+        _m += f'Recall    = {result["recall"]}\n'
+        self.logger.info(_m)
+        self.logger.info(f'Classification Report: \n{classification_report(labels, y_pred)}')
 
         model_path = self.classifier.save_model(fscore, auc)
         self.logger.info(f"Model saved to:  {model_path}")

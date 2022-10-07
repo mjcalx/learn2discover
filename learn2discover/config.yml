@@ -10,7 +10,7 @@ model_hyperparameters:
 
 training_settings:
   test_fraction: 0.6
-  simulated_unlabelled_fraction: 0.3
+  validation_fraction: 0.3
   unlabelled_sampling_size: 20
   query_strategy: least_confidence
   has_human_in_the_loop: false

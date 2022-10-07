@@ -103,7 +103,7 @@ class ConfigManager:
         self.layers                = HYPERPARAM.get('layers')
 
         self.test_fraction            = TRAINING.get('test_fraction')
-        self.unlabelled_fraction      = TRAINING.get('simulated_unlabelled_fraction')
+        self.validation_fraction      = TRAINING.get('validation_fraction')
         self.unlabelled_sampling_size = TRAINING.get('unlabelled_sampling_size')
         self.query_strategy           = TRAINING.get('query_strategy')
         self.has_human_in_the_loop    = TRAINING.get('has_human_in_the_loop')

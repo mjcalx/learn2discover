@@ -96,64 +96,25 @@ class FTSplitDatasetFacade:
     def set_training_data(self, idxs: pd.Index) -> None:
         self.split_dataset.set_training_data(idxs)
 
-    def set_evaluation_data(self, idxs: pd.Index) -> None:
-        self.split_dataset.set_evaluation_data(idxs)
-    
     def set_unlabelled_data(self, idxs: pd.Index) -> None:
         self.split_dataset.set_unlabelled_data(idxs)
-
-    @property
-    def train_idxs(self):
-        return self.split_dataset.train_idxs
-
-    @property
-    def test_idxs(self):
-        return self.split_dataset.test_idxs
-
-    @property
-    def unlabelled_idxs(self):
-        return self.split_dataset.unlabelled_idxs
 
     @property
     def training_data(self):
         return self.split_dataset.training_data
 
     @property
-    def evaluation_data(self):
-        return self.split_dataset.evaluation_data
-    
-    @property
-    def training_data_fair(self):
-        return self.split_dataset.training_data_fair
+    def validation_data(self):
+        return self.split_dataset.validation_data
 
     @property
-    def training_data_unfair(self):
-        return self.split_dataset.training_data_unfair
-
-    @property
-    def evaluation_data_fair(self):
-        return self.split_dataset.evaluation_data_fair
-    
-    @property
-    def evaluation_data_unfair(self):
-        return self.split_dataset.evaluation_data_unfair
-
-    @property
-    def unlabelled_idxs(self):
-        return self.split_dataset.unlabelled_idxs
+    def test_data(self):
+        return self.split_dataset.test_data
 
     @property
     def unlabelled_data(self):
         return self.split_dataset.unlabelled_data
-
-    @property
-    def training_count(self):
-        return self.split_dataset.training_count
-
-    @property
-    def evaluation_count(self):
-        return self.split_dataset.evaluation_count
-
+    
 class DatasetFacade(FTDataFrameDatasetFacade, FTTensorDatasetFacade, FTSplitDatasetFacade):
     def __init__(self, ft_dataset: FTDataFrameDataset, tensor_dataset: FTTensorDataset, split_dataset: FTSplitDataset):
         super(DatasetFacade, self).__init__(

@@ -82,7 +82,7 @@ class Learn2Discover:
         
         self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
 
-        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.test_idxs)
+        test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.test_data.index)
         fscore, auc = self.classifier.evaluate_model(test_idxs_shuffled)
         self.logger.info(f"[fscore, auc] = [{fscore}, {auc}]")
 
@@ -96,7 +96,7 @@ class Learn2Discover:
         ##### TAKE SAMPLE OF UNLABELLED DATA AND PREDICT THE LABELS #####
         self.classifier.eval()  # stop training in order to query single samples
 
-        sampled_idxs = self.dataset_manager.choose_random_unlabelled(self.dataset.unlabelled_idxs)
+        sampled_idxs = self.dataset_manager.choose_random_unlabelled(self.dataset.unlabelled_data.index)
         random_items = self.dataset.unlabelled_data.loc[sampled_idxs]
 
         _m = 'run(): selected random sample of {} unlabelled instances'
@@ -119,14 +119,13 @@ class Learn2Discover:
 
         ##### TRAIN MODEL USING SET OF CURRENTLY LABELLED DATA #####
         self.classifier.train()  # stop querying the model and continue training
-        train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.train_idxs)
+        train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.training_data.index)
         self.classifier.fit(train_idxs_shuffled)
 
         """Train model on the given training_data
         Tune with the validation_data
         Evaluate accuracy with the evaluation_data
         """
-
 
     def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
         FAIRNESS = ParamType.FAIRNESS.value
@@ -137,8 +136,8 @@ class Learn2Discover:
         annotated_data_fair   = _select(FAIR)
         annotated_data_unfair = _select(UNFAIR)
 
-        _old_len_fair   = len(self.dataset.training_data_fair)
-        _old_len_unfair = len(self.dataset.training_data_unfair)
+        _old_len_fair   = len(self.dataset.training_data.fair)
+        _old_len_unfair = len(self.dataset.training_data.unfair)
         _m =  'will add annotations:\n'
         _m += '\t{} fair instances   + {} annotated "fair" instances   = {}  updated fair instance count\n'
         _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'

@@ -114,21 +114,6 @@ class DatasetManager:
         self._ftdata = FTDataFrameDataset(self.schema, self.data)
         return self.data
 
-    def _get_unlabelled(self) -> pd.Index:
-        """
-        Assumption: unlabelled data were parsed from the same CSV as the rest 
-        of the data, with a value of None
-        """
-        assert self.config.has_human_in_the_loop
-        FAIRNESS = ParamType.FAIRNESS.value
-        data = self.data.flat_index()
-
-        _label_values = [v.value for v in Label]
-        idxs = data[FAIRNESS][~data[FAIRNESS].isin(_label_values)].index
-        assert len(idxs) > 0
-        self.logger.debug(f'{len(idxs)} unlabelled idxs found', verbosity=Verbosity.BASE)
-        return idxs
-
     def shuffle(self, idxs: pd.Index) -> pd.Index:
         _num_rows = 2
         _show = lambda df : (len(df[:_num_rows:]), idxs[:_num_rows:])

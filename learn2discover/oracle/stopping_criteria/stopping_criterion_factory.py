@@ -1,5 +1,6 @@
 from oracle.stopping_criteria.stopping_criterion import StoppingCriterion
 from oracle.stopping_criteria.iterations_stopping_criterion import IterationsStoppingCriterion
+from oracle.stopping_criteria.annotations_stopping_criterion import AnnotationsStoppingCriterion
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 
@@ -10,10 +11,11 @@ class StoppingCriterionFactory:
 
     def get_stopping_criterion(self, type_selection: str) -> StoppingCriterion:
         criterion_types = {
-            'iterations' : IterationsStoppingCriterion(),
+            'iterations'  : IterationsStoppingCriterion,
+            'annotations' : AnnotationsStoppingCriterion
         }
         try:
-            criterion = criterion_types[type_selection]
+            criterion = criterion_types[type_selection]()
         except KeyError:
             self.logger.debug(f'StoppingCriterion for "{type_selection}" not found. Defaulting to "iterations"')
             criterion = self.DEFAULT()

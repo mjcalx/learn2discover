@@ -17,7 +17,7 @@ class FTTensorDataset:
         # _vardict = lambda : {v:None for v in [VarType.CATEGORICAL, VarType.NUMERICAL]}
         # self._tensors = {pt:_vardict() for pt in ParamType}  # Dict of VarTypes per ParamType
         self._tensors = {v:None for v in [VarType.CATEGORICAL, VarType.NUMERICAL]}
-        self.labels = torch.tensor(self._ftdata.fairness_labels.cat.codes.values, dtype=torch.int64)
+        self._labels = torch.tensor(self._ftdata.fairness_labels.cat.codes.values, dtype=torch.int64)
         self._make_tensors()
 
         col_size = lambda col : len(self._ftdata.flat_index()[col].cat.categories)
@@ -26,6 +26,9 @@ class FTTensorDataset:
         self.categorical_embedding_sizes = [(col_size, min(50, (col_size+1)//2)) for col_size in self.categorical_column_sizes]
         self.logger.debug(f'Categorical embedding sizes: {self.categorical_embedding_sizes}', verbosity=Verbosity.TALKATIVE)
 
+    @property
+    def tensor_labels(self):
+        return self._labels
     @property
     def categorical_columns(self):
         return self._tensors[VarType.CATEGORICAL][0]

@@ -15,5 +15,5 @@ class DatasetFactory:
         cfg = ConfigManager.get_instance()
         ft_data = FTDataFrameDataset(schema, multi_idx_dataframe)
         tensor_data = FTTensorDataset(schema, ft_data)
-        split_data = FTSplitDataset(ft_data, random, cfg.test_fraction, cfg.unlabelled_fraction)
+        split_data = FTSplitDataset(ft_data, random, cfg.validation_fraction, cfg.test_fraction)
         return DatasetFacade(ft_data, tensor_data, split_data)

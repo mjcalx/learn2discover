@@ -10,10 +10,9 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import sklearn
 from sklearn.metrics import (
-    classification_report, confusion_matrix, accuracy_score, roc_curve, 
-    roc_auc_score, precision_score, recall_score, f1_score
+    accuracy_score, roc_curve, roc_auc_score, precision_score, recall_score, f1_score
 )
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from pathlib import Path
 
 from configs.config_manager import ConfigManager
@@ -21,6 +20,9 @@ from data.dataset_manager import DatasetManager
 from data.data_classes import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
+from utils.reporter import Report
+from utils.observer import Subject
+from utils.classifier_utils import ClassifierUtils
 
 class HalvedCeilingFn:
     """
@@ -39,7 +41,7 @@ class HalvedCeilingFn:
     def name(self):
         return 'Halved Ceiling Embedding'
 
-class L2DClassifier(nn.Module):
+class L2DClassifier(nn.Module, Subject):
     def __init__(self, num_numerical_cols):
         super(L2DClassifier, self).__init__()
         cfg = ConfigManager.get_instance()
@@ -75,8 +77,15 @@ class L2DClassifier(nn.Module):
 
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
-        self.loss_function = nn.CrossEntropyLoss()
+        self.loss_function = nn.NLLLoss()
         self.metrics = ['fscore', 'auc']
+
+        self._iteration = 0
+        self._report: Tuple[str, object] = None
+    
+    @property
+    def report(self):
+        return self._report
     
     def _build(self, len_input: int):
         all_layers = []
@@ -87,6 +96,7 @@ class L2DClassifier(nn.Module):
             all_layers.append(nn.Dropout(self.dropout_rate))
             len_input = i
         all_layers.append(nn.Linear(self.layers[-1], len(Label)))
+        all_layers.append(nn.LogSoftmax(1))
 
         self.stack = nn.Sequential(*all_layers)
 
@@ -112,6 +122,8 @@ class L2DClassifier(nn.Module):
 
     def fit(self, idxs: pd.Index, epochs=None) -> None:
         self.logger.debug("Starting training...", verbosity=Verbosity.CHATTY)
+        self.logger.debug(f'Will train with learning_rate={self.learning_rate}', verbosity=Verbosity.BASE)
+        self._iteration += 1
         self.len_data = len(idxs)
         epochs = epochs if epochs is not None else self.epochs
         get_categorical = lambda _dct_tensors : _dct_tensors[VarType.CATEGORICAL]
@@ -142,32 +154,37 @@ class L2DClassifier(nn.Module):
             self.optimizer.step()
 
             self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=Verbosity.CHATTY)
-        self.logger.debug(f'FINAL EPOCH: {e:3}')
-        self.logger.debug(f'TRAINING LOSS: {single_loss.item():10.10f}')
 
-        #TODO EXTRACT
-        plt.plot(range(epochs), [i.item() for i in aggregated_losses])
-        plt.ylabel('Loss')
-        plt.xlabel('epoch')
-        plt.savefig('loss-vs-epoch.png')
-        plt.clf()
+        vloss = self.evaluate_model(self.datamgr.data.validation_data.index)['loss']
+        self._report = (Report.VALIDATION_LOSS_VS_ITERATIONS, (self._iteration, vloss.item()))
+        self.notify()
 
-    def evaluate_model(self, test_idxs: pd.Index) -> List[float]:
+
+    def evaluate_model(self, eval_idxs: pd.Index, final_report=False) -> Dict[str, object]:
         """Evaluate the model on the held-out evaluation data
         Return the f-value for disaster-related and the AUC
         """
-        i= 100 # TODO batch? Duplications
-        _dict_tensors = self.datamgr.tensor_data.loc(test_idxs)
-        categorical_data = _dict_tensors[VarType.CATEGORICAL][:i]
-        numerical_data     = _dict_tensors[VarType.NUMERICAL][:i]
-        labels        = self.datamgr.tensor_data.tensor_dataset.labels[test_idxs][:i]
+        self.eval()
+
+        _dict_tensors = self.datamgr.data.loc(eval_idxs)
+        categorical_data = _dict_tensors[VarType.CATEGORICAL]
+        numerical_data     = _dict_tensors[VarType.NUMERICAL]
+        labels        = self.datamgr.data.tensor_labels[eval_idxs]
 
         with torch.no_grad():
-            y_val = self(categorical_data, numerical_data)
-            loss  = self.loss_function(y_val, labels)
-        y_val = np.argmax(y_val, axis=1)
+            log_probs = self(categorical_data, numerical_data)
+            loss  = self.loss_function(log_probs, labels)
+        y_val = np.argmax(log_probs, axis=1)
         auc = roc_auc_score(labels, y_val)
         fpr, tpr, _ = roc_curve(labels, y_val)
+
+        if not final_report:
+            self._report = (Report.TEST_LOSS_VS_ANNOTATIONS, (self.datamgr.data.training_data.count, loss.item()))
+            self.notify()
+
+            confidence = ClassifierUtils.get_confidence_from_log_probs(log_probs)
+            self._report = (Report.CONFIDENCE_VS_ANNOTATIONS, (self.datamgr.data.training_data.count, confidence))
+            self.notify()
 
         #TODO EXTRACT
         plt.plot(fpr, tpr, label="AUC="+str(auc))
@@ -175,16 +192,17 @@ class L2DClassifier(nn.Module):
         plt.xlabel('False Positive Rate')
         plt.savefig('roc.png')
 
-        self.logger.debug(f'TEST LOSS: {loss:.8f}')
-        self.logger.debug(f'CONFUSION MATRIX:\n{confusion_matrix(labels, y_val)}')
-        self.logger.debug(f'CLASSIFICATION REPORT: \n{classification_report(labels, y_val)}')
-        self.logger.debug(f'ACCURACY: {accuracy_score(labels, y_val)}')
-        self.logger.debug(f'AUC: {auc}')
-
-        # precision = precision_score(labels, y_val)
-        # recall = recall_score(labels, y_val)
+        accuracy = accuracy_score(labels, y_val)
+        precision = precision_score(labels, y_val)
+        recall = recall_score(labels, y_val)
         fscore = f1_score(labels, y_val)
-        return[fscore, auc]
+        results = {'f': fscore, 'auc': auc, 'loss':loss, 
+                   'y_pred':y_val, 'y':labels, 
+                   'tpr':tpr, 'fpr':fpr,
+                   'acc': accuracy, 'precision':precision, 'recall':recall}
+        
+        self.train()
+        return results
 
     def save_model(self, fscore, auc):
         fscore = round(fscore,3)

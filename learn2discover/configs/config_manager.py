@@ -96,6 +96,7 @@ class ConfigManager:
         self.index_column_included = DATASET.get('index_column_included')
         self.delimiter             = DATASET.get('delimiter')
 
+        self.hyperparameters       = HYPERPARAM
         self.epochs                = HYPERPARAM.get('epochs')
         self.learning_rate         = HYPERPARAM.get('learning_rate')
         self.selections_per_epoch  = HYPERPARAM.get('selections_per_epoch')
@@ -103,9 +104,7 @@ class ConfigManager:
         self.layers                = HYPERPARAM.get('layers')
 
         self.test_fraction            = TRAINING.get('test_fraction')
-        self.unlabelled_fraction      = TRAINING.get('simulated_unlabelled_fraction')
-        self.min_evaluation_items     = TRAINING.get('min_evaluation_items')
-        self.min_training_items       = TRAINING.get('min_training_items')
+        self.validation_fraction      = TRAINING.get('validation_fraction')
         self.unlabelled_sampling_size = TRAINING.get('unlabelled_sampling_size')
         self.query_strategy           = TRAINING.get('query_strategy')
         self.has_human_in_the_loop    = TRAINING.get('has_human_in_the_loop')
@@ -114,6 +113,7 @@ class ConfigManager:
         self.stopping_criterion_settings = CRITERION.get('settings')[self.stopping_criterion]
 
         self.model_path          = OUTPUT.get('model_path')
+        self.report_path         = OUTPUT.get('report_path')
 
         assert isinstance(self.column_names_included, bool)
         assert isinstance(self.index_column_included, bool)

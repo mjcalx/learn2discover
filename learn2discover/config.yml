@@ -10,9 +10,7 @@ model_hyperparameters:
 
 training_settings:
   test_fraction: 0.6
-  simulated_unlabelled_fraction: 0.3
-  min_evaluation_items: 200
-  min_training_items: 50
+  validation_fraction: 0.3
   unlabelled_sampling_size: 20
   query_strategy: least_confidence
   has_human_in_the_loop: false
@@ -21,6 +19,8 @@ training_settings:
     settings:
       iterations:
         num_iterations: 5
+      annotations:
+        num_annotations: 100
 
 dataset_settings:
   schema_file: ../datasets/schemas/schema_compas.yml
@@ -30,6 +30,7 @@ dataset_settings:
 
 output_settings:
   model_path: models
+  report_path: report
 
 log:
   primary_logger_type: console

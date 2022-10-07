@@ -22,6 +22,7 @@ from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 from utils.reporter import Report
 from utils.observer import Subject
+from utils.classifier_utils import ClassifierUtils
 
 class HalvedCeilingFn:
     """
@@ -154,30 +155,36 @@ class L2DClassifier(nn.Module, Subject):
 
             self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=Verbosity.CHATTY)
 
-        self.eval()
         vloss = self.evaluate_model(self.datamgr.data.validation_data.index)['loss']
-        self._report = (Report.VALIDATION_LOSS_PER_ITERATION, (self._iteration, vloss.item()))
+        self._report = (Report.VALIDATION_LOSS_VS_ITERATIONS, (self._iteration, vloss.item()))
         self.notify()
 
 
-    def evaluate_model(self, eval_idxs: pd.Index) -> Dict[str, object]:
+    def evaluate_model(self, eval_idxs: pd.Index, final_report=False) -> Dict[str, object]:
         """Evaluate the model on the held-out evaluation data
         Return the f-value for disaster-related and the AUC
         """
+        self.eval()
+
         _dict_tensors = self.datamgr.data.loc(eval_idxs)
         categorical_data = _dict_tensors[VarType.CATEGORICAL]
         numerical_data     = _dict_tensors[VarType.NUMERICAL]
         labels        = self.datamgr.data.tensor_labels[eval_idxs]
 
         with torch.no_grad():
-            y_val = self(categorical_data, numerical_data)
-            loss  = self.loss_function(y_val, labels)
-        y_val = np.argmax(y_val, axis=1)
+            log_probs = self(categorical_data, numerical_data)
+            loss  = self.loss_function(log_probs, labels)
+        y_val = np.argmax(log_probs, axis=1)
         auc = roc_auc_score(labels, y_val)
         fpr, tpr, _ = roc_curve(labels, y_val)
 
-        self._report = (Report.TEST_LOSS_PER_ANNOTATION, (self.datamgr.data.training_data.count, loss.item()))
-        self.notify()
+        if not final_report:
+            self._report = (Report.TEST_LOSS_VS_ANNOTATIONS, (self.datamgr.data.training_data.count, loss.item()))
+            self.notify()
+
+            confidence = ClassifierUtils.get_confidence_from_log_probs(log_probs)
+            self._report = (Report.CONFIDENCE_VS_ANNOTATIONS, (self.datamgr.data.training_data.count, confidence))
+            self.notify()
 
         #TODO EXTRACT
         plt.plot(fpr, tpr, label="AUC="+str(auc))
@@ -193,6 +200,8 @@ class L2DClassifier(nn.Module, Subject):
                    'y_pred':y_val, 'y':labels, 
                    'tpr':tpr, 'fpr':fpr,
                    'acc': accuracy, 'precision':precision, 'recall':recall}
+        
+        self.train()
         return results
 
     def save_model(self, fscore, auc):

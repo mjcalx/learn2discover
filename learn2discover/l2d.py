@@ -88,7 +88,7 @@ class Learn2Discover:
         self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
 
         test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.test_data.index)
-        result = self.classifier.evaluate_model(test_idxs_shuffled)
+        result = self.classifier.evaluate_model(test_idxs_shuffled, final_report=True)
         fscore = result['f']
         auc    = result['auc']
         labels = result['y']

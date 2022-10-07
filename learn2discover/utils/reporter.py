@@ -14,38 +14,47 @@ from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 
 class Report(Enum):
-    VALIDATION_LOSS_PER_ITERATION = "validation-loss-per-iteration"
-    TEST_LOSS_PER_ANNOTATION = "test-loss-per-annotation"
+    VALIDATION_LOSS_VS_ITERATIONS = "validation-loss-vs-iterations"
+    TEST_LOSS_VS_ANNOTATIONS = "test-loss-vs-annotations"
+    CONFIDENCE_VS_ANNOTATIONS = "confidence-vs-annotations"
 
 ITER_C = 'Iteration'
 VLOSS_C = 'Validation Loss'
 TLOSS_C = 'Test Loss'
 ANNOT_C = 'Number of annotations'
+CONF_C = 'Confidence'
 
 class Reporter(Observer):
     def __init__(self):
         self.logger = LoggerFactory.get_logger(__class__.__name__)
 
-        self._vloss_per_iter = {ITER_C:[], VLOSS_C:[]}
-        self._tloss_per_annotation = {ANNOT_C:[], TLOSS_C:[]}
-
+        self._vloss_vs_iter = {ITER_C:[], VLOSS_C:[]}
+        self._tloss_vs_annotations = {ANNOT_C:[], TLOSS_C:[]}
+        self._conf_vs_annotations = {ANNOT_C:[], CONF_C:[]}
         self._report_types = {
-            Report.VALIDATION_LOSS_PER_ITERATION : self._vloss_per_iter,
-            Report.TEST_LOSS_PER_ANNOTATION      : self._tloss_per_annotation,
+            Report.VALIDATION_LOSS_VS_ITERATIONS : self._vloss_vs_iter,
+            Report.TEST_LOSS_VS_ANNOTATIONS      : self._tloss_vs_annotations,
+            Report.CONFIDENCE_VS_ANNOTATIONS     : self._conf_vs_annotations
         }
 
     def update(self, subject: Subject):
         key, report = subject.report
 
-        if key == Report.VALIDATION_LOSS_PER_ITERATION:
+        if key == Report.VALIDATION_LOSS_VS_ITERATIONS:
             iteration, vloss = report
             self._report_types[key][ITER_C].append(iteration)
             self._report_types[key][VLOSS_C].append(vloss)
 
-        if key == Report.TEST_LOSS_PER_ANNOTATION:
+        if key == Report.TEST_LOSS_VS_ANNOTATIONS:
             annotation_count, tloss = report
             self._report_types[key][ANNOT_C].append(annotation_count)
             self._report_types[key][TLOSS_C].append(tloss)
+        
+        if key == Report.CONFIDENCE_VS_ANNOTATIONS:
+            annotation_count, mean_conf = report
+            self._report_types[key][ANNOT_C].append(annotation_count)
+            self._report_types[key][CONF_C].append(mean_conf)
+
 
     def report(self) -> None:
         cfg = ConfigManager.get_instance()

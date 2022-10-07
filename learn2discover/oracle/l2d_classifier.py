@@ -20,6 +20,8 @@ from data.dataset_manager import DatasetManager
 from data.data_classes import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
+from utils.reporter import Report
+from utils.observer import Subject
 
 class HalvedCeilingFn:
     """
@@ -38,7 +40,7 @@ class HalvedCeilingFn:
     def name(self):
         return 'Halved Ceiling Embedding'
 
-class L2DClassifier(nn.Module):
+class L2DClassifier(nn.Module, Subject):
     def __init__(self, num_numerical_cols):
         super(L2DClassifier, self).__init__()
         cfg = ConfigManager.get_instance()
@@ -75,6 +77,14 @@ class L2DClassifier(nn.Module):
         #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
         self.loss_function = nn.NLLLoss()
+        self.metrics = ['fscore', 'auc']
+
+        self._iteration = 0
+        self._report: Tuple[str, object] = None
+    
+    @property
+    def report(self):
+        return self._report
     
     def _build(self, len_input: int):
         all_layers = []
@@ -112,6 +122,7 @@ class L2DClassifier(nn.Module):
     def fit(self, idxs: pd.Index, epochs=None) -> None:
         self.logger.debug("Starting training...", verbosity=Verbosity.CHATTY)
         self.logger.debug(f'Will train with learning_rate={self.learning_rate}', verbosity=Verbosity.BASE)
+        self._iteration += 1
         self.len_data = len(idxs)
         epochs = epochs if epochs is not None else self.epochs
         get_categorical = lambda _dct_tensors : _dct_tensors[VarType.CATEGORICAL]
@@ -142,15 +153,11 @@ class L2DClassifier(nn.Module):
             self.optimizer.step()
 
             self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=Verbosity.CHATTY)
-        self.logger.debug(f'FINAL EPOCH: {e:3}')
-        self.logger.debug(f'TRAINING LOSS: {single_loss.item():10.10f}')
 
-        #TODO EXTRACT
-        plt.plot(range(epochs), [i.item() for i in aggregated_losses])
-        plt.ylabel('Loss')
-        plt.xlabel('epoch')
-        plt.savefig('loss-vs-epoch.png')
-        plt.clf()
+        self.eval()
+        vloss = self.evaluate_model(self.datamgr.data.validation_data.index)['loss']
+        self._report = (Report.VALIDATION_LOSS_PER_ITERATION, (self._iteration, vloss.item()))
+        self.notify()
 
 
     def evaluate_model(self, eval_idxs: pd.Index) -> Dict[str, object]:
@@ -168,6 +175,9 @@ class L2DClassifier(nn.Module):
         y_val = np.argmax(y_val, axis=1)
         auc = roc_auc_score(labels, y_val)
         fpr, tpr, _ = roc_curve(labels, y_val)
+
+        self._report = (Report.TEST_LOSS_PER_ANNOTATION, (self.datamgr.data.training_data.count, loss.item()))
+        self.notify()
 
         #TODO EXTRACT
         plt.plot(fpr, tpr, label="AUC="+str(auc))

@@ -27,6 +27,7 @@ sys.path.index(current_path)
 sys.path.index(lib_path)
 
 from configs.config_manager import ConfigManager
+from utils.reporter import Reporter
 from utils.logging_utils import LoggingUtils, Verbosity
 from loggers.logger_factory import LoggerFactory
 from data.schema import VarType
@@ -61,6 +62,8 @@ class Learn2Discover:
 
             self.test_fraction = self.config_manager.test_fraction
 
+            self.reporter = Reporter()
+
             # Human-specific params
             if self.config_manager.has_human_in_the_loop: 
                 self._get_annotations = self._get_annotations_human
@@ -76,8 +79,7 @@ class Learn2Discover:
     def run(self):
         numerical_data = self.dataset.get_tensors_of_type(VarType.NUMERICAL)
         self.classifier = L2DClassifier(numerical_data.shape[1])
-
-        print(self.dataset.training_data.count)
+        self.classifier.attach(self.reporter)
 
         while not self.stopping_criterion():
             self.stopping_criterion.report()
@@ -104,6 +106,8 @@ class Learn2Discover:
 
         model_path = self.classifier.save_model(fscore, auc)
         self.logger.info(f"Model saved to:  {model_path}")
+
+        self.reporter.report()
 
     def active_learning_loop(self):
         """

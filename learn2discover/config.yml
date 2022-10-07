@@ -30,6 +30,7 @@ dataset_settings:
 
 output_settings:
   model_path: models
+  report_path: report
 
 log:
   primary_logger_type: console

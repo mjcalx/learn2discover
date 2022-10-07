@@ -96,6 +96,7 @@ class ConfigManager:
         self.index_column_included = DATASET.get('index_column_included')
         self.delimiter             = DATASET.get('delimiter')
 
+        self.hyperparameters       = HYPERPARAM
         self.epochs                = HYPERPARAM.get('epochs')
         self.learning_rate         = HYPERPARAM.get('learning_rate')
         self.selections_per_epoch  = HYPERPARAM.get('selections_per_epoch')
@@ -112,6 +113,7 @@ class ConfigManager:
         self.stopping_criterion_settings = CRITERION.get('settings')[self.stopping_criterion]
 
         self.model_path          = OUTPUT.get('model_path')
+        self.report_path         = OUTPUT.get('report_path')
 
         assert isinstance(self.column_names_included, bool)
         assert isinstance(self.index_column_included, bool)

@@ -68,7 +68,7 @@ class FTTensorDatasetFacade:
 
     @property
     def tensor_labels(self):
-        return self.tensor_dataset.labels
+        return self.tensor_dataset.tensor_labels
     
     @property
     def categorical_column_sizes(self):

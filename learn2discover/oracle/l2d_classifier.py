@@ -89,7 +89,6 @@ class L2DClassifier(nn.Module):
         all_layers.append(nn.Linear(self.layers[-1], len(Label)))
         all_layers.append(nn.LogSoftmax(1))
 
-
         self.stack = nn.Sequential(*all_layers)
 
     def forward(self, x_categorical, x_numerical):

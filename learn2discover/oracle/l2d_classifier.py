@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
-import sklearn
 from sklearn.metrics import (
     accuracy_score, roc_curve, roc_auc_score, precision_score, recall_score, f1_score
 )
@@ -20,7 +19,6 @@ from data.dataset_manager import DatasetManager
 from data.data_classes import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
-from utils.reporter import Report
 from utils.observer import Subject
 from utils.classifier_utils import ClassifierUtils
 
@@ -81,11 +79,11 @@ class L2DClassifier(nn.Module, Subject):
         self.metrics = ['fscore', 'auc']
 
         self._iteration = 0
-        self._report: Tuple[str, object] = None
+        self._data = None
     
     @property
-    def report(self):
-        return self._report
+    def data(self):
+        return self._data
     
     def _build(self, len_input: int):
         all_layers = []
@@ -133,6 +131,7 @@ class L2DClassifier(nn.Module, Subject):
         # TODO 
         # (1) perform selections per epoch
         # (2) shuffle pre-epoch selections
+
         for e in range(epochs):
             idxs = self.datamgr.shuffle(idxs)
             _dict_tensors = self.datamgr.data.loc(idxs)
@@ -155,15 +154,14 @@ class L2DClassifier(nn.Module, Subject):
 
             self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=Verbosity.CHATTY)
 
-        vloss = self.evaluate_model(self.datamgr.data.validation_data.index)['loss']
-        self._report = (Report.VALIDATION_LOSS_VS_ITERATIONS, (self._iteration, vloss.item()))
-        self.notify()
+        # Evaluate model at each iteration
+        test_idxs_shuffled = self.datamgr.shuffle(self.datamgr.data.test_data.index)
+        self.evaluate_model(test_idxs_shuffled)
 
 
     def evaluate_model(self, eval_idxs: pd.Index, final_report=False) -> Dict[str, object]:
-        """Evaluate the model on the held-out evaluation data
-        Return the f-value for disaster-related and the AUC
-        """
+        """Evaluate the model and return evaluation metrics"""
+        
         self.eval()
 
         _dict_tensors = self.datamgr.data.loc(eval_idxs)
@@ -179,18 +177,17 @@ class L2DClassifier(nn.Module, Subject):
         fpr, tpr, _ = roc_curve(labels, y_val)
 
         if not final_report:
-            self._report = (Report.TEST_LOSS_VS_ANNOTATIONS, (self.datamgr.data.training_data.count, loss.item()))
-            self.notify()
-
+            vloss = loss.item()
             confidence = ClassifierUtils.get_confidence_from_log_probs(log_probs)
-            self._report = (Report.CONFIDENCE_VS_ANNOTATIONS, (self.datamgr.data.training_data.count, confidence))
+            accuracy = accuracy_score(labels, y_val)
+            self._data = (self._iteration, vloss, self.datamgr.data.training_data.count, accuracy, confidence)
             self.notify()
 
         #TODO EXTRACT
-        plt.plot(fpr, tpr, label="AUC="+str(auc))
-        plt.ylabel('True Positive Rate')
-        plt.xlabel('False Positive Rate')
-        plt.savefig('roc.png')
+        # plt.plot(fpr, tpr, label="AUC="+str(auc))
+        # plt.ylabel('True Positive Rate')
+        # plt.xlabel('False Positive Rate')
+        # plt.savefig('roc.png')
 
         accuracy = accuracy_score(labels, y_val)
         precision = precision_score(labels, y_val)

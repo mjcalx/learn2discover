@@ -31,11 +31,11 @@ class Subject(AbstractSubject):
     
     def attach(self, observer: Observer) -> None:
         self.logger.debug(f'Attaching observer "{observer.__class__.__name__}"', verbosity=Verbosity.TALKATIVE)
-        self.observers.append(observer)
+        self._observers.append(observer)
     
     def detach(self, observer: Observer) -> None:
         self.logger.debug(f'Detaching observer "{observer.__class__.__name__}"', verbosity=Verbosity.TALKATIVE)
-        self.observers.remove(observer)
+        self._observers.remove(observer)
     
     def notify(self) -> None:
         self.logger.debug(f'Notifying observers...', verbosity=Verbosity.TALKATIVE)

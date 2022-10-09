@@ -3,18 +3,12 @@ import sys
 import traceback
 import pandas as pd
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-import datetime
-import re
 import os
 from sklearn.metrics import (
     classification_report, confusion_matrix
 )
-from random import shuffle
-from collections import defaultdict
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 current_path = os.path.join(root_path, 'learn2discover')
@@ -142,11 +136,6 @@ class Learn2Discover:
         train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.training_data.index)
         self.classifier.fit(train_idxs_shuffled)
 
-        """Train model on the given training_data
-        Tune with the validation_data
-        Evaluate accuracy with the evaluation_data
-        """
-
     def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
         FAIRNESS = ParamType.FAIRNESS.value
         FAIR     = Label.FAIR.value
@@ -163,7 +152,7 @@ class Learn2Discover:
         _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'
         self.logger.debug(_m.format(
             _old_len_fair,   len(annotated_data_fair),   _old_len_fair + len(annotated_data_fair),
-            _old_len_unfair, len(annotated_data_unfair), _old_len_fair + len(annotated_data_fair),
+            _old_len_unfair, len(annotated_data_unfair), _old_len_unfair + len(annotated_data_unfair),
             verbosity = Verbosity.CHATTY
         ))
         self.dataset.set_training_data(self.dataset.training_data.index.union(annotated_data.index))

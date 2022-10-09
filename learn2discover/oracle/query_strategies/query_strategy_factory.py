@@ -2,7 +2,6 @@ from loggers.logger_factory import LoggerFactory
 from oracle.query_strategies.query_strategy import QueryStrategy
 from oracle.query_strategies.least_confidence_strategy import LeastConfidenceStrategy
 from oracle.query_strategies.entropy_strategy import EntropyStrategy
-from oracle.query_strategies.margin_sampling_strategy import MarginSamplingStrategy
 
 class QueryStrategyFactory:
     def __init__(self):
@@ -13,8 +12,8 @@ class QueryStrategyFactory:
         strategy_types = {
             'entropy' : EntropyStrategy,
             'least_confidence' : LeastConfidenceStrategy,
-            'margin_sampling' : MarginSamplingStrategy,
         }
+
         try:
             strategy = strategy_types[type_selection]()
         except KeyError:

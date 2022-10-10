@@ -16,10 +16,10 @@ class Reporter(Observer):
         self.history = History.get_instance()
 
     def update(self, subject: Subject):
-        iter, loss, annotations, accuracy, confidence = subject.data
+        iter, loss, annotations, accuracy, precision, confidence = subject.data
 
         self.history.concat(
-            iter, loss, annotations, accuracy, confidence
+            iter, loss, annotations, accuracy, precision, confidence
         )
 
 

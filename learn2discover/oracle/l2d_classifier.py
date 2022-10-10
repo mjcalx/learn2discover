@@ -176,11 +176,16 @@ class L2DClassifier(nn.Module, Subject):
         auc = roc_auc_score(labels, y_val)
         fpr, tpr, _ = roc_curve(labels, y_val)
 
+        accuracy = accuracy_score(labels, y_val)
+        precision = precision_score(labels, y_val)
+        recall = recall_score(labels, y_val)
+        fscore = f1_score(labels, y_val)
+
         if not final_report:
             vloss = loss.item()
             confidence = ClassifierUtils.get_confidence_from_log_probs(log_probs)
             accuracy = accuracy_score(labels, y_val)
-            self._data = (self._iteration, vloss, self.datamgr.data.training_data.count, accuracy, confidence)
+            self._data = (self._iteration, vloss, self.datamgr.data.training_data.count, accuracy, precision, confidence)
             self.notify()
 
         #TODO EXTRACT
@@ -189,10 +194,6 @@ class L2DClassifier(nn.Module, Subject):
         # plt.xlabel('False Positive Rate')
         # plt.savefig('roc.png')
 
-        accuracy = accuracy_score(labels, y_val)
-        precision = precision_score(labels, y_val)
-        recall = recall_score(labels, y_val)
-        fscore = f1_score(labels, y_val)
         results = {'f': fscore, 'auc': auc, 'loss':loss, 
                    'y_pred':y_val, 'y':labels, 
                    'tpr':tpr, 'fpr':fpr,

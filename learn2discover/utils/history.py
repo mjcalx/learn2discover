@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 import plotly
 from plotly import subplots
 
-df_cols =['Iteration', 'Loss', 'Annotations', 'Accuracy', 'Confidence']
+df_cols =['Iteration', 'Loss', 'Annotations', 'Accuracy', 'Precision', 'Confidence']
 
 class History():
     instance = None
 
     def __init__(self):
         self.data = pd.DataFrame(
-            [np.zeros(5)],
+            [np.zeros(6)],
             columns=df_cols
         )
     
@@ -24,7 +24,7 @@ class History():
             History.instance = History()
         return History.instance
         
-    def concat(self, iter, loss, annotations, accuracy, confidence):
+    def concat(self, iter, loss, annotations, accuracy, precision, confidence):
         self.data = pd.concat(
             [self.data, 
             pd.DataFrame(
@@ -32,6 +32,7 @@ class History():
                 loss, 
                 annotations, 
                 accuracy, 
+                precision,
                 confidence]],
                 columns = df_cols)]
         )
@@ -44,8 +45,8 @@ class History():
         fig = subplots.make_subplots(rows=1, cols=2, horizontal_spacing = 0.02, column_widths=[0.6, 0.4],
                             specs=[[{"type": "scatter"},{"type": "table"}]])
         # Left
-        fig.add_trace(plotly.graph_objs.Scatter(x= self.data['Annotations'].values, y= self.data['Loss'].astype(float).values.round(4),
-                                line=dict(color='OrangeRed', width= 1.5), name = 'Loss'), 1, 1)
+        fig.add_trace(plotly.graph_objs.Scatter(x= self.data['Annotations'].values, y= self.data['Precision'].astype(float).values.round(4),
+                                line=dict(color='OrangeRed', width= 1.5), name = 'Precision'), 1, 1)
         fig.add_trace(plotly.graph_objs.Scatter(x= self.data['Annotations'].values, y= self.data['Accuracy'].astype(float).values,
                                 line=dict(color='MidnightBlue', width= 1.5),  name = 'Accuracy'), 1, 1)
         fig.add_trace(plotly.graph_objs.Scatter(x= self.data['Annotations'].values, y= self.data['Confidence'].astype(float).values,

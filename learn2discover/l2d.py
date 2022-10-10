@@ -187,7 +187,7 @@ class Learn2Discover:
             annotated = self._get_annotations_human(unlabelled_data)
         else:
             annotated = self._get_annotations_auto(unlabelled_data)
-        assert len(set(annotated_data.index).intersection(set(self.dataset.training_data.index))) == 0
+        assert len(set(annotated.index).intersection(set(self.dataset.training_data.index))) == 0
         return annotated
 
     def _get_annotations_auto(self, unlabelled_data: pd.DataFrame) -> pd.DataFrame:

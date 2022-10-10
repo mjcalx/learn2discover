@@ -12,7 +12,7 @@ training_settings:
   test_fraction: 0.6
   validation_fraction: 0.3
   unlabelled_sampling_size: 5
-  query_strategy: least_confidence
+  query_strategy: entropy
   has_human_in_the_loop: false
   stopping_criterion:
     choice: annotations
@@ -20,7 +20,7 @@ training_settings:
       iterations:
         num_iterations: 5
       annotations:
-        num_annotations: 60
+        num_annotations: 30
       confidence:
         max_confidence: 95
 

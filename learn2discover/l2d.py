@@ -2,13 +2,15 @@ import os
 import sys
 import traceback
 import pandas as pd
-
-import torch.nn as nn
-import torch.nn.functional as F
+import matplotlib.pyplot as plt
 import os
+import plotly.graph_objects as go
+from plotly import io
 from sklearn.metrics import (
-    classification_report, confusion_matrix
+    classification_report, confusion_matrix, ConfusionMatrixDisplay
 )
+from utils.reporter import get_output_dir
+from configs.config_manager import ConfigManager
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 current_path = os.path.join(root_path, 'learn2discover')
@@ -30,7 +32,6 @@ from data.data_classes import ParamType, Label
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 from oracle.stopping_criteria.stopping_criterion_factory import StoppingCriterionFactory
 from oracle.l2d_classifier import L2DClassifier
-
 
 def main():
     learn_to_discover = Learn2Discover()
@@ -98,10 +99,34 @@ class Learn2Discover:
         self.logger.info(_m)
         self.logger.info(f'Classification Report: \n{classification_report(labels, y_pred)}')
 
+        # Plot and save confusion matrix and final stats
         model_path = self.classifier.save_model(fscore, auc)
         self.logger.info(f"Model saved to:  {model_path}")
-
+        
         self.reporter.report()
+
+        # TODO: extract
+        profile = get_output_dir()
+        confusion_matrix_path = os.path.join(ConfigManager.get_instance().report_path, profile, "confusion_matrix.png")
+        ConfusionMatrixDisplay.from_predictions(labels, y_pred)
+        plt.savefig(confusion_matrix_path)
+        self.logger.debug(f'Writing to "{confusion_matrix_path}"', verbosity=Verbosity.BASE)
+
+        # Stats table
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=['Accuracy', 'F-score', 'AUC', 'Precision', 'Recall']),
+            cells=dict(
+                values=[
+                    [round(result["acc"], 6)], 
+                    [round(fscore, 6)], 
+                    [round(result["auc"], 6)], 
+                    [round(result["precision"], 6)], 
+                    [round(result["recall"], 6)]]
+                ))
+            ])
+        stats_path = os.path.join(ConfigManager.get_instance().report_path, profile, "stats.png")
+        io.write_image(fig, stats_path)
+        self.logger.debug(f'Writing to "{stats_path}"', verbosity=Verbosity.BASE)
 
     def active_learning_loop(self):
         """

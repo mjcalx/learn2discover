@@ -27,7 +27,7 @@ class Reporter(Observer):
         cfg = ConfigManager.get_instance()
 
         # Key output directory by hyperparameter values
-        profile = hashlib.sha1(str.encode(str(cfg.hyperparameters))).hexdigest()[:5]
+        profile = get_output_dir()
         Path(cfg.report_path).mkdir(parents=True, exist_ok=True)
         Path(os.path.join(cfg.report_path,profile)).mkdir(parents=True, exist_ok=True)
         
@@ -47,3 +47,7 @@ class Reporter(Observer):
         self.history.plot_history(html_filename)
         self.logger.debug(f'Writing to "{html_filename}"', verbosity=Verbosity.BASE)
 
+# TODO: extract
+def get_output_dir():
+    cfg = ConfigManager.get_instance()
+    return hashlib.sha1(str.encode(str(cfg.hyperparameters))).hexdigest()[:5]

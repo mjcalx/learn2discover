@@ -3,7 +3,7 @@ from loggers.logger_factory import LoggerFactory
 from oracles.abstract_mock_oracle import AbstractMockOracle
 from system_under_test import SystemUnderTest
 from data.dataset_manager import DatasetManager
-from data.data_classes import ParamType
+from data.enum import ParamType
 from data.ft_dataframe_dataset import FTDataFrameDataset
 
 class DataGenerator:

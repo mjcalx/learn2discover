@@ -1,0 +1,40 @@
+{
+    "model_hyperparameters": {
+        "epochs": 50,
+        "learning_rate": 0.1,
+        "selections_per_epoch": 40,
+        "dropout_rate": 0.5,
+        "layers": [
+            200,
+            100,
+            50
+        ]
+    },
+    "training_settings": {
+        "test_fraction": 0.6,
+        "validation_fraction": 0.3,
+        "unlabelled_sampling_size": 5,
+        "query_strategy": "entropy",
+        "has_human_in_the_loop": false,
+        "stopping_criterion": {
+            "choice": "annotations",
+            "settings": {
+                "iterations": {
+                    "num_iterations": 5
+                },
+                "annotations": {
+                    "num_annotations": 30
+                },
+                "confidence": {
+                    "max_confidence": 95
+                }
+            }
+        }
+    },
+    "dataset_settings": {
+        "schema_file": "../datasets/schemas/schema_compas.yml",
+        "data_file": "../datasets/generated/compas.csv",
+        "index_column_included": true,
+        "delimiter": ","
+    }
+}

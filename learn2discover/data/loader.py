@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from data.schema import Schema, VarType
-from data.data_classes import ParamType as param
+from data.enum import ParamType as param
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 
@@ -22,15 +22,9 @@ class Loader:
         accessed with the keys defined in ParamType
         """
         try:
-            # csv format: [ID, TEXT, LABEL, SAMPLING_STRATEGY, CONFIDENCE]
-            # desired csv format: [ID, COL1, ..., COLN, LABEL, SAMPLING_STRATEGY, CONFIDENCE]
             self.logger.debug("Loading schema...")
             cfgmgr = self.config_manager
             schema = Schema(cfgmgr.get_data_schema())
-            # TODO
-            # If training set, validation set, and eval set already exist...
-            #     don't load the dataset, it's already been processed
-            #     MAYBE perform per-entry check, for consistency.
             self.logger.debug("Loading dataset...")
             data = self._read_csv_file(schema)
 

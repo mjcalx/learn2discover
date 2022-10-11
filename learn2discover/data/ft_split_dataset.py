@@ -3,7 +3,7 @@ import pandas as pd
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 from configs.config_manager import ConfigManager
-from data.data_classes import ParamType, Label
+from data.enum import ParamType, Label
 from data.ft_dataframe_dataset import FTDataFrameDataset
 
 FRACTION_ERR = 0.00001

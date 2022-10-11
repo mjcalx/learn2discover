@@ -1,6 +1,7 @@
 import pandas as pd
 from system_under_test import SystemUnderTest
-from data.data_classes import Outcome, DataAttributes
+from data.enum import Outcome
+from data.data_attributes import DataAttributes
 
 class Compas(SystemUnderTest):
     INPUT_ATTRIBUTES = ['Person_ID', 'AssessmentID', 'Case_ID', 'Agency_Text', 'LastName', 'FirstName', 'MiddleName',

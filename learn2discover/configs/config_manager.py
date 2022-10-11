@@ -91,18 +91,20 @@ class ConfigManager:
         CRITERION  = TRAINING.get('stopping_criterion')
         OUTPUT     = _section('output_settings')
 
+        self.dataset_settings      = DATASET
         self.schema_file           = DATASET.get('schema_file')
         self.data_file             = DATASET.get('data_file')
         self.index_column_included = DATASET.get('index_column_included')
         self.delimiter             = DATASET.get('delimiter')
 
-        self.hyperparameters       = HYPERPARAM
-        self.epochs                = HYPERPARAM.get('epochs')
-        self.learning_rate         = HYPERPARAM.get('learning_rate')
-        self.selections_per_epoch  = HYPERPARAM.get('selections_per_epoch')
-        self.dropout_rate          = HYPERPARAM.get('dropout_rate')
-        self.layers                = HYPERPARAM.get('layers')
+        self.hyperparameter_settings = HYPERPARAM
+        self.epochs                  = HYPERPARAM.get('epochs')
+        self.learning_rate           = HYPERPARAM.get('learning_rate')
+        self.selections_per_epoch    = HYPERPARAM.get('selections_per_epoch')
+        self.dropout_rate            = HYPERPARAM.get('dropout_rate')
+        self.layers                  = HYPERPARAM.get('layers')
 
+        self.training_settings        = TRAINING
         self.test_fraction            = TRAINING.get('test_fraction')
         self.validation_fraction      = TRAINING.get('validation_fraction')
         self.unlabelled_sampling_size = TRAINING.get('unlabelled_sampling_size')

@@ -11,7 +11,8 @@ from data.ft_tensor_dataset import FTTensorDataset
 from loggers.logger_factory import LoggerFactory
 from data.schema import Schema, VarType
 from data.loader import Loader
-from data.data_classes import DataAttributes, Label, Outcome, ParamType
+from data.enum import Label, Outcome, ParamType
+from data.data_attributes import DataAttributes
 from utils.validation_utils import ValidationUtils
 from utils.logging_utils import Verbosity
 from configs.config_manager import ConfigManager

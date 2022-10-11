@@ -16,7 +16,7 @@ from pathlib import Path
 
 from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
-from data.data_classes import ParamType, Label, VarType
+from data.enum import ParamType, Label, VarType
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 from utils.observer import Subject
@@ -73,7 +73,6 @@ class L2DClassifier(nn.Module, Subject):
         self.logger.debug(f'NUM COLUMNS: CAT {len(_td.categorical_columns)}, NUM {len(_td.numerical_columns)}', verbosity=Verbosity.CHATTY)
         self.logger.debug(f'INIT EMBEDDING SUM CATEGORICAL: {num_categorical_cols}', verbosity=Verbosity.CHATTY)
 
-        #todo what are the parameters?
         self.optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
         self.loss_function = nn.NLLLoss()
         self.metrics = ['fscore', 'auc']
@@ -98,24 +97,31 @@ class L2DClassifier(nn.Module, Subject):
 
         self.stack = nn.Sequential(*all_layers)
 
-    def forward(self, x_categorical, x_numerical):
+    def forward(self, x_categorical: torch.Tensor, x_numerical: torch.Tensor):
         # Define how data is passed through the model
         m = 'In forward(): \n\tx_categorical:\n{}\n\tx_numerical:\n{}'
         self.logger.debug(m.format(x_categorical, x_numerical), verbosity=Verbosity.INCESSANT)
         n = 'In forward(): x_categorical has {}, x_numerical has {}'
         self.logger.debug(n.format(x_categorical.size(), x_numerical.size()), verbosity=Verbosity.VERBOSE)
 
+        concatenated = torch.cat([
+            self._pass_categorical(x_categorical), 
+            self._pass_numerical(x_numerical)
+        ], 1)
+
+        return self.stack(concatenated)
+
+    def _pass_categorical(self, x_categorical: torch.Tensor):
         embeddings = []
         for i,e in enumerate(self.embeddings):
             self.logger.debug(f'In forward(): {i},{e}', verbosity=Verbosity.TALKATIVE)
             self.logger.debug(f'\n{e(x_categorical[:,i])}', verbosity=Verbosity.INCESSANT)
             embeddings.append(e(x_categorical[:,i]))
-        # TODO refactor
-        x = torch.cat(embeddings,1)
-        x = self.embedding_dropout(x)
-        x_numerical = self.batch_norm_num(x_numerical)
-        x = torch.cat([x, x_numerical], 1)
-        x = self.stack(x)
+        x = self.embedding_dropout(torch.cat(embeddings,1))
+        return x
+
+    def _pass_numerical(self, x_numerical: torch.Tensor):
+        x = self.batch_norm_num(x_numerical)
         return x
 
     def fit(self, idxs: pd.Index, epochs=None) -> None:
@@ -128,10 +134,8 @@ class L2DClassifier(nn.Module, Subject):
         get_numerical  = lambda _dct_tensors : _dct_tensors[VarType.NUMERICAL]
 
         aggregated_losses = []
-        # TODO 
         # (1) perform selections per epoch
         # (2) shuffle pre-epoch selections
-
         for e in range(epochs):
             idxs = self.datamgr.shuffle(idxs)
             _dict_tensors = self.datamgr.data.loc(idxs)
@@ -187,12 +191,6 @@ class L2DClassifier(nn.Module, Subject):
             accuracy = accuracy_score(labels, y_val)
             self._data = (self._iteration, vloss, self.datamgr.data.training_data.count, accuracy, precision, confidence)
             self.notify()
-
-        #TODO EXTRACT
-        # plt.plot(fpr, tpr, label="AUC="+str(auc))
-        # plt.ylabel('True Positive Rate')
-        # plt.xlabel('False Positive Rate')
-        # plt.savefig('roc.png')
 
         results = {'f': fscore, 'auc': auc, 'loss':loss, 
                    'y_pred':y_val, 'y':labels, 

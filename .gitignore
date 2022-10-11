@@ -1,2 +1,4 @@
 *.pyc
 .idea
+learn2discover/models
+learn2discover/report

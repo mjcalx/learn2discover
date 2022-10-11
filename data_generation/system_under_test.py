@@ -1,6 +1,6 @@
 import pandas as pd
 from loggers.logger_factory import LoggerFactory
-from data.data_classes import DataAttributes
+from data.data_attributes import DataAttributes
 
 class SystemUnderTest:
     def __init__(self, input_attributes, output_attributes):

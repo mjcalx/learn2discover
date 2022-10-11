@@ -1,5 +1,5 @@
 import pandas as pd
-from data.data_classes import Label, Outcome
+from data.enum import Label, Outcome
 
 class ValidationUtils:
     @staticmethod

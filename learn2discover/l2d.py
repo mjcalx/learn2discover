@@ -20,7 +20,7 @@ from utils.logging_utils import LoggingUtils, Verbosity
 from loggers.logger_factory import LoggerFactory
 from data.schema import VarType
 from data.dataset_manager import DatasetManager
-from data.data_classes import ParamType, Label
+from data.enum import ParamType, Label
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 from oracle.stopping_criteria.stopping_criterion_factory import StoppingCriterionFactory
 from oracle.l2d_classifier import L2DClassifier
@@ -34,7 +34,7 @@ class Learn2Discover:
     Learn2Discover
     """
     def __init__(self, workspace_dir=os.getcwd()):
-        self.config_manager = ConfigManager(workspace_dir)
+        self.config_manager = ConfigManager(workspace_dir, mode='train')
         LoggingUtils.get_instance().debug('Loaded Configurations.')
         try:
             self.logger = LoggerFactory.get_logger(__class__.__name__)

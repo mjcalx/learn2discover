@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List, Dict, Tuple
-from data.data_classes import VarType
+from data.enum import VarType
 from loggers.logger_factory import LoggerFactory
 from collections import OrderedDict
 from enum import Enum

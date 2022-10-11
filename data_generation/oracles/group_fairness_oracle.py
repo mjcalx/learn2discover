@@ -2,7 +2,7 @@ import os
 import sys
 import pandas as pd
 from typing import List, Dict
-from data.data_classes import ParamType
+from data.enum import ParamType
 
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 datagen_path = os.path.join(root_path, 'data_generation')
@@ -11,7 +11,7 @@ try:
 except ValueError:
     sys.path.append(datagen_path)
 
-from data.data_classes import Label, Outcome
+from data.enum import Label, Outcome
 from data.dataset_manager import DatasetManager
 from oracles.abstract_mock_oracle import AbstractMockOracle
 
@@ -68,7 +68,7 @@ class GroupFairnessOracle(AbstractMockOracle):
         """
         group_fairness = {attr:pd.Series(group_fairness_dict[attr]) for attr in group_fairness_dict.keys()}
         means = {key:group_fairness[key].mean() for key in group_fairness.keys()}
-        # TODO: Determine a good way to perform this normalization. It is currently done by subtracting the mean from
+        # TODO: Determine a better way to perform this normalisation
         normalized_fairness = {key:group_fairness[key].apply(lambda x: x - means[key])  for key in group_fairness.keys()}
         return normalized_fairness
 

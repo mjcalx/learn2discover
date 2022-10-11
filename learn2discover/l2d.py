@@ -2,14 +2,6 @@ import os
 import sys
 import traceback
 import pandas as pd
-import matplotlib.pyplot as plt
-import os
-import plotly.graph_objects as go
-from plotly import io
-from sklearn.metrics import (
-    classification_report, confusion_matrix, ConfusionMatrixDisplay
-)
-from utils.reporter import get_output_dir
 from configs.config_manager import ConfigManager
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -28,7 +20,7 @@ from utils.logging_utils import LoggingUtils, Verbosity
 from loggers.logger_factory import LoggerFactory
 from data.schema import VarType
 from data.dataset_manager import DatasetManager
-from data.data_classes import ParamType, Label
+from data.enum import ParamType, Label
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 from oracle.stopping_criteria.stopping_criterion_factory import StoppingCriterionFactory
 from oracle.l2d_classifier import L2DClassifier
@@ -42,7 +34,7 @@ class Learn2Discover:
     Learn2Discover
     """
     def __init__(self, workspace_dir=os.getcwd()):
-        self.config_manager = ConfigManager(workspace_dir)
+        self.config_manager = ConfigManager(workspace_dir, mode='train')
         LoggingUtils.get_instance().debug('Loaded Configurations.')
         try:
             self.logger = LoggerFactory.get_logger(__class__.__name__)
@@ -83,50 +75,12 @@ class Learn2Discover:
         self.logger.info('Stopping criterion reached. Beginning evaluation...', verbosity=Verbosity.BASE)
 
         test_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.test_data.index)
-        result = self.classifier.evaluate_model(test_idxs_shuffled, final_report=True)
-        fscore = result['f']
-        auc    = result['auc']
-        labels = result['y']
-        y_pred  = result['y_pred']
-        _m =  'RESULTS:\n'
-        _m += 'Confusion Matrix: {}\n'.format(confusion_matrix(labels, y_pred))
-        _m += f'Test Loss = {result["loss"]}\n'
-        _m += f'Accuracy  = {result["acc"]}\n'
-        _m += f'fscore    = {fscore}\n'
-        _m += f'AUC       = {result["auc"]}\n'
-        _m += f'Precision = {result["precision"]}\n'
-        _m += f'Recall    = {result["recall"]}\n'
-        self.logger.info(_m)
-        self.logger.info(f'Classification Report: \n{classification_report(labels, y_pred)}')
+        results = self.classifier.evaluate_model(test_idxs_shuffled, final_report=True)
 
-        # Plot and save confusion matrix and final stats
-        model_path = self.classifier.save_model(fscore, auc)
+        self.reporter.report(results)
+
+        model_path = self.classifier.save_model(results['f'], results['auc'])
         self.logger.info(f"Model saved to:  {model_path}")
-        
-        self.reporter.report()
-
-        # TODO: extract
-        profile = get_output_dir()
-        confusion_matrix_path = os.path.join(ConfigManager.get_instance().report_path, profile, "confusion_matrix.png")
-        ConfusionMatrixDisplay.from_predictions(labels, y_pred)
-        plt.savefig(confusion_matrix_path)
-        self.logger.debug(f'Writing to "{confusion_matrix_path}"', verbosity=Verbosity.BASE)
-
-        # Stats table
-        fig = go.Figure(data=[go.Table(
-            header=dict(values=['Accuracy', 'F-score', 'AUC', 'Precision', 'Recall']),
-            cells=dict(
-                values=[
-                    [round(result["acc"], 6)], 
-                    [round(fscore, 6)], 
-                    [round(result["auc"], 6)], 
-                    [round(result["precision"], 6)], 
-                    [round(result["recall"], 6)]]
-                ))
-            ])
-        stats_path = os.path.join(ConfigManager.get_instance().report_path, profile, "stats.png")
-        io.write_image(fig, stats_path)
-        self.logger.debug(f'Writing to "{stats_path}"', verbosity=Verbosity.BASE)
 
     def active_learning_loop(self):
         """

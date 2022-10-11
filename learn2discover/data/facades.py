@@ -3,7 +3,8 @@ import pandas as pd
 import torch
 
 from data.schema import Schema
-from data.data_classes import VarType, DataAttributes
+from data.enum import VarType
+from data.data_attributes import DataAttributes
 from data.ft_dataframe_dataset import FTDataFrameDataset
 from data.ft_tensor_dataset import FTTensorDataset
 from data.ft_split_dataset import FTSplitDataset
@@ -39,7 +40,7 @@ class FTDataFrameDatasetFacade:
 
     @property
     def outcomes(self) -> pd.Series:
-        return self.ft_dataset.outcomes()
+        return self.ft_dataset.outcomes
 
     @property
     def fairness_labels(self) -> pd.Series:

@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from oracle.query_strategies.query_strategy import QueryStrategy
-from data.data_classes import VarType
+from data.enum import VarType
 from utils.logging_utils import Verbosity
 from utils.classifier_utils import ClassifierUtils
 
@@ -15,6 +15,9 @@ class LeastConfidenceStrategy(QueryStrategy):
         return 'Least Confidence Strategy'
 
     def query(self, classifier: nn.Module, unlabelled_data: pd.DataFrame, number: int=80, limit: int=10000) -> pd.DataFrame:
+        """
+        Assumption: the final layer of the classifier is a LogSoftmax layer
+        """
         num_instances = len(unlabelled_data)
         _m = 'query(): received {} unlabelled instances.'
         self.logger.debug(_m.format(num_instances))

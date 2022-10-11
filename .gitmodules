@@ -1,3 +1,0 @@
-[submodule "lib/pytorch_active_learning"]
-	path = lib/pytorch_active_learning
-	url = git@github.com:rmunro/pytorch_active_learning.git

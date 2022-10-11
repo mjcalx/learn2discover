@@ -4,7 +4,8 @@ import pandas as pd
 import itertools
 
 from data.schema import Schema
-from data.data_classes import ParamType, VarType, DataAttributes, Label
+from data.enum import ParamType, VarType, Label
+from data.data_attributes import DataAttributes
 from utils.validation_utils import ValidationUtils
 from functools import reduce
 
@@ -21,10 +22,8 @@ class FTDataFrameDataset:
         preprocessors : List[Callable[[pd.DataFrame], pd.DataFrame]] = [drop_nan_scoretext]
         self.dataframe = reduce(lambda f, g: g(f), preprocessors, multi_indexed_data)
 
-        # todo attribute_data is now flat_index
         self._flat = None
         self._attributes = None
-        self.attribute_data = None
         # ParamTypes are derived from MultiIndex level 0
         idxs = [self.dataframe[x].columns for x in [ParamType.INPUTS.value, ParamType.OUTPUTS.value]]
         self._attribute_index = pd.Index(list(itertools.chain(*idxs)))
@@ -33,28 +32,23 @@ class FTDataFrameDataset:
         assert self._attributes is not None
         self._preprocess_categorical_variables()
         self._preprocess_categorical_variables(self.fairness_labels)
-        self._reassign_attribute_data()
         self.flat_index()
-        # TODO cast to types
 
     def __len__(self):
         return len(self.dataframe)
 
     def flat_index(self):
-        if self._flat is None:
-            idxs = list(self._attribute_index) + [ParamType.OUTCOME.value, ParamType.FAIRNESS.value]
-            self._flat = self.dataframe.droplevel(0, axis=1)[idxs]
+        idxs = list(self._attribute_index) + [ParamType.OUTCOME.value, ParamType.FAIRNESS.value]
+        self._flat = self.dataframe.droplevel(0, axis=1)[idxs]
         return self._flat
 
     def set_attribute_column(self, column_name: str, new_column: pd.Series):
         assert isinstance(new_column, pd.Series), 'column must be of type pandas.Series'
-        assert column_name in self.attribute_data.columns, 'column to replace must exist'
         assert len(new_column) > len(self.dataframe), 'column must be same length as data'
         if column_name in self._categorical_variables():
             self._preprocess_categorical_variables(new_column)
         else:
             self.dataframe.loc(axis=1)[:, column_name] = new_column
-        self._reassign_attribute_data() # re-assign single-indexed df
     
     @property
     def all_columns(self) -> pd.DataFrame:
@@ -97,8 +91,6 @@ class FTDataFrameDataset:
     def _categorical_variables(self):
         return self.schema.vars_by_type(VarType.CATEGORICAL)
 
-    def _reassign_attribute_data(self):
-        self.attribute_data = self.dataframe.droplevel(0, axis=1)[self._attribute_index]
 
     def _preprocess_categorical_variables(self, series: pd.Series=None) -> None:
         if series is not None:

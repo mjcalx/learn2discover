@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 from data.ft_dataframe_dataset import FTDataFrameDataset
-from data.data_classes import ParamType, VarType
+from data.enum import ParamType, VarType
 from data.schema import Schema
 
 class FTTensorDataset:
@@ -14,8 +14,6 @@ class FTTensorDataset:
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.schema = schema
         self._ftdata = ftdata
-        # _vardict = lambda : {v:None for v in [VarType.CATEGORICAL, VarType.NUMERICAL]}
-        # self._tensors = {pt:_vardict() for pt in ParamType}  # Dict of VarTypes per ParamType
         self._tensors = {v:None for v in [VarType.CATEGORICAL, VarType.NUMERICAL]}
         self._labels = torch.tensor(self._ftdata.fairness_labels.cat.codes.values, dtype=torch.int64)
         self._make_tensors()
@@ -95,7 +93,6 @@ class FTTensorDataset:
 
     def _get_subframe_of_type(self, vartype: VarType) -> pd.DataFrame:
         _var_cols = self.schema.vars_by_type(vartype)
-        # input_idxs = [col for col in _var_cols if col in self._ftdata.attributes.inputs]
         input_idxs = _var_cols
-        subframe = self._ftdata.attribute_data[input_idxs]
+        subframe = self._ftdata.flat_index()[input_idxs]
         return subframe

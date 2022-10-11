@@ -2,19 +2,15 @@ import os
 import sys
 import traceback
 import pandas as pd
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import math
-import datetime
-import re
+import matplotlib.pyplot as plt
 import os
+import plotly.graph_objects as go
+from plotly import io
 from sklearn.metrics import (
-    classification_report, confusion_matrix
+    classification_report, confusion_matrix, ConfusionMatrixDisplay
 )
-from random import shuffle
-from collections import defaultdict
+from utils.reporter import get_output_dir
+from configs.config_manager import ConfigManager
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 current_path = os.path.join(root_path, 'learn2discover')
@@ -36,7 +32,6 @@ from data.data_classes import ParamType, Label
 from oracle.query_strategies.query_strategy_factory import QueryStrategyFactory
 from oracle.stopping_criteria.stopping_criterion_factory import StoppingCriterionFactory
 from oracle.l2d_classifier import L2DClassifier
-
 
 def main():
     learn_to_discover = Learn2Discover()
@@ -104,10 +99,34 @@ class Learn2Discover:
         self.logger.info(_m)
         self.logger.info(f'Classification Report: \n{classification_report(labels, y_pred)}')
 
+        # Plot and save confusion matrix and final stats
         model_path = self.classifier.save_model(fscore, auc)
         self.logger.info(f"Model saved to:  {model_path}")
-
+        
         self.reporter.report()
+
+        # TODO: extract
+        profile = get_output_dir()
+        confusion_matrix_path = os.path.join(ConfigManager.get_instance().report_path, profile, "confusion_matrix.png")
+        ConfusionMatrixDisplay.from_predictions(labels, y_pred)
+        plt.savefig(confusion_matrix_path)
+        self.logger.debug(f'Writing to "{confusion_matrix_path}"', verbosity=Verbosity.BASE)
+
+        # Stats table
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=['Accuracy', 'F-score', 'AUC', 'Precision', 'Recall']),
+            cells=dict(
+                values=[
+                    [round(result["acc"], 6)], 
+                    [round(fscore, 6)], 
+                    [round(result["auc"], 6)], 
+                    [round(result["precision"], 6)], 
+                    [round(result["recall"], 6)]]
+                ))
+            ])
+        stats_path = os.path.join(ConfigManager.get_instance().report_path, profile, "stats.png")
+        io.write_image(fig, stats_path)
+        self.logger.debug(f'Writing to "{stats_path}"', verbosity=Verbosity.BASE)
 
     def active_learning_loop(self):
         """
@@ -142,11 +161,6 @@ class Learn2Discover:
         train_idxs_shuffled = self.dataset_manager.shuffle(self.dataset.training_data.index)
         self.classifier.fit(train_idxs_shuffled)
 
-        """Train model on the given training_data
-        Tune with the validation_data
-        Evaluate accuracy with the evaluation_data
-        """
-
     def _update_training_data(self, annotated_data: pd.DataFrame) -> None:
         FAIRNESS = ParamType.FAIRNESS.value
         FAIR     = Label.FAIR.value
@@ -163,7 +177,7 @@ class Learn2Discover:
         _m += '\t{} unfair instances + {} annotated "unfair" instances = {}  updated unfair instance count\n'
         self.logger.debug(_m.format(
             _old_len_fair,   len(annotated_data_fair),   _old_len_fair + len(annotated_data_fair),
-            _old_len_unfair, len(annotated_data_unfair), _old_len_fair + len(annotated_data_fair),
+            _old_len_unfair, len(annotated_data_unfair), _old_len_unfair + len(annotated_data_unfair),
             verbosity = Verbosity.CHATTY
         ))
         self.dataset.set_training_data(self.dataset.training_data.index.union(annotated_data.index))
@@ -173,7 +187,7 @@ class Learn2Discover:
             annotated = self._get_annotations_human(unlabelled_data)
         else:
             annotated = self._get_annotations_auto(unlabelled_data)
-        assert len(set(annotated_data.index).intersection(set(self.dataset.training_data.index))) == 0
+        assert len(set(annotated.index).intersection(set(self.dataset.training_data.index))) == 0
         return annotated
 
     def _get_annotations_auto(self, unlabelled_data: pd.DataFrame) -> pd.DataFrame:

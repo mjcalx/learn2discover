@@ -1,7 +1,6 @@
 import pandas as pd
 import torch
 import torch.nn as nn
-import math
 from oracle.query_strategies.query_strategy import QueryStrategy
 from data.data_classes import VarType
 from utils.logging_utils import Verbosity
@@ -27,7 +26,7 @@ class LeastConfidenceStrategy(QueryStrategy):
             idxs = unlabelled_data.index
         else: 
             # only apply the model to a limited number of items
-            idxs = self.dataset_manager.shuffle(unlabeled_data)[:limit]
+            idxs = self.dataset_manager.shuffle(unlabelled_data)[:limit]
 
         tensors = self.dataset_manager.tensor_data.loc(idxs)
         categorical_tensors = tensors[VarType.CATEGORICAL]

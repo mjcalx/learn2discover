@@ -40,17 +40,21 @@ def generate_results(runs:int=100):
             result_dict = latest_stats
         
         else:
-            # Average the two data frames
-            raw_data_df = pd.concat([raw_data_df, latest_raw]).groupby(level=0).mean()
+            # Sum the two data frames
+            raw_data_df = raw_data_df.add(latest_raw, fill_value=0)
 
-            # Average the two dicts
+            # Sum the two dicts
             for k, v1 in result_dict.items():
                 for k, v2 in latest_stats.items():
-                    result_dict[k] = (v1 + v2)/2
+                    result_dict[k] = (v1 + v2)
 
         print(raw_data_df)
         print(result_dict)
-        
+    
+    # Divide final values by 'runs' to get averages
+    raw_data_df = raw_data_df.div(runs)
+    result_dict = {k: v / runs for k, v in result_dict.items()}
+
     # Generate report
     output_csv_path = os.path.join(os.getcwd(), OUTPUT_CSV)
     raw_data_df.to_csv(output_csv_path, index=False)

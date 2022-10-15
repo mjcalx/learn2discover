@@ -9,7 +9,7 @@ training_settings:
   test_fraction: 0.6
   validation_fraction: 0.3
   unlabelled_sampling_size: 5
-  query_strategy: entropy
+  query_strategy: least_confidence
   has_human_in_the_loop: false
   stopping_criterion:
     choice: annotations
@@ -33,5 +33,5 @@ output_settings:
 
 log:
   primary_logger_type: console
-  log_level: debug
+  log_level: warn
   verbosity: 0

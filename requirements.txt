@@ -5,4 +5,4 @@ plotly==5.10.0
 pyyaml==6.0
 scikit_learn==1.1.2
 torch==1.12.1
-typer==7.1.2
+typer==0.6.1

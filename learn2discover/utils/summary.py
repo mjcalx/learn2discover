@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly
 
-from json import dumps
+from json import dump
 from plotly import subplots
 
 from typing import Dict
@@ -50,4 +50,4 @@ def summary_plot(csv_filepath: str, output_file: str, rows: int = 25, yLim: int 
 
 def summary_dict(output_path: str, result: Dict[str, object]):
     with open(output_path, "w") as f:
-        f.write(dumps(result))
+        dump(result, f, indent=4)

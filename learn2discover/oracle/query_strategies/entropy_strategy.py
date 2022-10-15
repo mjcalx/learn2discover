@@ -46,7 +46,7 @@ class EntropyStrategy(QueryStrategy):
                 entropies.append((id,entropy))
 
         # Return the ids of least confidence from those sampled
-        entropies.sort(key=lambda x: x[1])
+        entropies.sort(key=lambda x: x[1], reverse=True)
         return_idxs = list(zip(*entropies))[0][:number:]
         _m = 'query(): top results: {}'
         self.logger.debug(_m.format(entropies[:5:]))

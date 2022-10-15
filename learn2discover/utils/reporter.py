@@ -4,15 +4,14 @@ import json
 from pathlib import Path
 from typing import Dict
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-from plotly import io
 from sklearn.metrics import (
     classification_report, confusion_matrix, ConfusionMatrixDisplay
 )
 
 from utils.history import History
-from utils.observer import Observer, Subject
 from utils.logging_utils import Verbosity
+from utils.observer import Observer, Subject
+from utils.summary import summary_plot, summary_dict
 from configs.config_manager import ConfigManager
 from loggers.logger_factory import LoggerFactory
 
@@ -33,7 +32,6 @@ class Reporter(Observer):
 
         # Print results to console
         fscore = result['f']
-        auc    = result['auc']
         labels = result['y']
         y_pred  = result['y_pred']
         _m =  'RESULTS:\n'
@@ -48,7 +46,7 @@ class Reporter(Observer):
         self.logger.info(f'Classification Report: \n{classification_report(labels, y_pred)}')
 
         # Key output directory by configuration
-        profile = Reporter.generate_output_dir()
+        profile = Reporter.get_report_dir()
         Path(cfg.report_path).mkdir(parents=True, exist_ok=True)
         Path(os.path.join(cfg.report_path,profile)).mkdir(parents=True, exist_ok=True)
         
@@ -65,7 +63,7 @@ class Reporter(Observer):
 
         # Plot data to html file
         html_filename = os.path.join(cfg.report_path, profile, "results.html")
-        self.history.plot_history(html_filename)
+        summary_plot(csv_path, html_filename)
         self.logger.debug(f'Writing to "{html_filename}"', verbosity=Verbosity.BASE)
 
         # Plot and save confusion matrix and final stats
@@ -74,24 +72,15 @@ class Reporter(Observer):
         plt.savefig(confusion_matrix_path)
         self.logger.debug(f'Writing to "{confusion_matrix_path}"', verbosity=Verbosity.BASE)
 
-        # Write stats table
-        fig = go.Figure(data=[go.Table(
-            header=dict(values=['Accuracy', 'F-score', 'AUC', 'Precision', 'Recall']),
-            cells=dict(
-                values=[
-                    [round(result["acc"], 6)], 
-                    [round(fscore, 6)], 
-                    [round(result["auc"], 6)], 
-                    [round(result["precision"], 6)], 
-                    [round(result["recall"], 6)]]
-                ))
-            ])
-        stats_path = os.path.join(cfg.report_path, profile, "stats.png")
-        io.write_image(fig, stats_path)
+        # Write stats files
+        stats_path = os.path.join(cfg.report_path, profile, "stats.json")
+        summary_dict(stats_path, {k: result[k] for k in ('f', 'auc', 'acc', 'precision', 'recall')})
         self.logger.debug(f'Writing to "{stats_path}"', verbosity=Verbosity.BASE)
 
+        self.history.reset()
+
     @staticmethod
-    def generate_output_dir() -> str:
+    def get_report_dir() -> str:
         return hashlib.sha1(str.encode(str(Reporter._output_key()))).hexdigest()[:5]
 
     @staticmethod

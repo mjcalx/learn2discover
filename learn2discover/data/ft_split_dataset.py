@@ -62,7 +62,7 @@ class FTSplitDataset:
 
         self.logger = LoggerFactory.get_logger(__class__.__name__)
         self.random = random_state
-        n = 'splitting based on test_fraction={}, validation_fraction'
+        n = 'splitting based on test_fraction={}, validation_fraction={}'
         self.logger.debug(n.format(test_fraction, validation_fraction), verbosity=Verbosity.BASE)
 
         self.validation_fraction = validation_fraction

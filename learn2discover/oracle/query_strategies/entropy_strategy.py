@@ -42,7 +42,8 @@ class EntropyStrategy(QueryStrategy):
                 y_pred = classifier(categorical_tensors[None, i], numerical_tensors[None, i])
                 self.logger.debug(f'LOG_PROBS: {y_pred}', verbosity=Verbosity.CHATTY)
                 conf = ClassifierUtils.get_confidence_from_log_probs(y_pred)
-                entropy = -1 * (conf*log2(conf) + (1 - conf)*log2(conf))
+                conf -= 0.0000001 # TODO: what do we do with confidence == 1 cases?
+                entropy = -1 * (conf*log2(conf) + (1 - conf)*log2(1 - conf))
                 entropies.append((id,entropy))
 
         # Return the ids of least confidence from those sampled

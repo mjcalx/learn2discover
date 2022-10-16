@@ -13,7 +13,10 @@ class ConfidenceStoppingCriterion(StoppingCriterion):
     
     def __call__(self):
         # Get the current confidence of the model
-        return self.history["Confidence"].iloc[-1] >= self.conf
+        return self._get_confidence() >= self.conf
+    
+    def _get_confidence(self):
+        return self.history["Confidence"].iloc[-1]
         
     def report(self):
-        self.logger.debug(f'Confidence: {self.history["Confidence"]}')
+        self.logger.debug(f'Confidence: {self._get_confidence()} | Threshold: {self.conf}')

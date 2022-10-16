@@ -7,6 +7,8 @@ from utils.logging_utils import Verbosity
 from utils.classifier_utils import ClassifierUtils
 from math import log2
 
+CONSTANT_TERM = 0.0000001  # add small error to avoid calculating log of 0
+
 class EntropyStrategy(QueryStrategy):
     def __init__(self):
         super(EntropyStrategy, self).__init__()
@@ -41,8 +43,7 @@ class EntropyStrategy(QueryStrategy):
 
                 y_pred = classifier(categorical_tensors[None, i], numerical_tensors[None, i])
                 self.logger.debug(f'LOG_PROBS: {y_pred}', verbosity=Verbosity.CHATTY)
-                conf = ClassifierUtils.get_confidence_from_log_probs(y_pred)
-                conf -= 0.0000001 # TODO: what do we do with confidence == 1 cases?
+                conf = ClassifierUtils.get_confidence_from_log_probs(y_pred).pop() - CONSTANT_TERM
                 entropy = -1 * (conf*log2(conf) + (1 - conf)*log2(1 - conf))
                 entropies.append((id,entropy))
 

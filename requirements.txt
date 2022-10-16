@@ -2,8 +2,8 @@ kaleido==0.2.1
 numpy==1.23.1
 pandas==1.4.4
 plotly==5.10.0
+progressbar2==4.0.0
 pyyaml==6.0
 scikit_learn==1.1.2
 torch==1.12.1
 typer==0.6.1
-progressbar2==4.0.0

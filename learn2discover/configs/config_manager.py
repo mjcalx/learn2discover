@@ -26,6 +26,12 @@ class ConfigManager:
     fair_csv_filename = 'fair.csv'
     unfair_csv_filename = 'unfair.csv'
 
+    input_attrs = []
+    output_attrs = []
+    sensitive_attrs = []
+    evaluation_attr = ''
+    fail_vals = []
+
     primary_logger_type = 'console'
     log_level = 'info'
 
@@ -76,7 +82,12 @@ class ConfigManager:
         self.data_file             = self.configs.get('generator_settings').get('data_file')
         self.index_column_included = self.configs.get('generator_settings').get('index_column_included')
         self.delimiter             = self.configs.get('generator_settings').get('delimiter')
-
+        self.input_attrs           = self.configs.get('generator_settings').get('input_attrs')
+        self.output_attrs          = self.configs.get('generator_settings').get('output_attrs')
+        self.sensitive_attrs       = self.configs.get('generator_settings').get('sensitive_attrs')
+        self.evaluation_attr       = self.configs.get('generator_settings').get('evaluation_attr')
+        self.fail_vals             = self.configs.get('generator_settings').get('fail_vals')
+        
         self.output_csv = self.configs.get('output_settings').get('output_csv')
 
         assert isinstance(self.index_column_included, bool)

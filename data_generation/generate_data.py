@@ -16,24 +16,17 @@ from system_under_test import SystemUnderTest
 from oracles.abstract_mock_oracle import AbstractMockOracle
 
 #################Import SUT and Mock Oracle##############
-from compas.compas_sut import Compas
 from oracles.group_fairness_oracle import GroupFairnessOracle
 #########################################################
-
-SUT_TYPE    : SystemUnderTest    = Compas
-ORACLE_TYPE : AbstractMockOracle = GroupFairnessOracle
-ORACLE_ARGS : Dict               = {'sensitive_attributes': ["Sex_Code_Text", "Ethnic_Code_Text"]}
 
 if __name__=="__main__":
     """
     A generalised script for generating data for training.
-    
-    Modify SUT_TYPE, ORACLE_TYPE, and ORACLE_ARGS.
     """
     config  = ConfigManager(os.getcwd(), mode='generate')
 
-    sut    = SUT_TYPE()
-    oracle = ORACLE_TYPE(**ORACLE_ARGS)
+    sut    = SystemUnderTest(config.input_attrs, config.output_attrs, config.evaluation_attr, config.fail_vals)
+    oracle = GroupFairnessOracle(config.sensitive_attrs)
 
     datamgr = DatasetManager(sut.attributes)
 

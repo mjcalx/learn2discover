@@ -1,11 +1,16 @@
 generator_settings:
-  schema_file: ../datasets/schemas/schema_compas.yml
-  data_file: ../datasets/original/COMPAS/compas-scores-raw.csv
+  input_attrs: ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
+  output_attrs: ['salary-prediction']
+  sensitive_attrs: ["sex", "race"]
+  evaluation_attr: "salary-prediction"
+  fail_vals: ["<=50K"]
+  schema_file: ../datasets/schemas/schema_adult.yml
+  data_file: ../datasets/original/adult/adult_raw.csv
   index_column_included: false
-  delimiter: ','
+  delimiter: ', '
 
 output_settings:
-  output_csv: ../datasets/generated/compas.csv
+  output_csv: ../datasets/generated/adult.csv
 
 log:
   primary_logger_type: console

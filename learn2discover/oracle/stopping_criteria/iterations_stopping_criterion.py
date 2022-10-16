@@ -1,11 +1,8 @@
-from configs.config_manager import ConfigManager
 from oracle.stopping_criteria.stopping_criterion import StoppingCriterion
 
 class IterationsStoppingCriterion(StoppingCriterion):
     def __init__(self):
         super(IterationsStoppingCriterion, self).__init__()
-        cfg = ConfigManager.get_instance()
-        self.settings = cfg.stopping_criterion_settings
         self.max_iterations = self.settings['num_iterations']
         self.iterations = 0
 

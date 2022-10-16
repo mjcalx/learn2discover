@@ -14,7 +14,8 @@ OUTPUT_CSV = "report/final_raw_data.csv"
 OUTPUT_STATS_JSON = "report/final_stats.json"
 OUTPUT_HTML = "report/final_report.html"
 
-_RUN_MSG = '#'*60 + " RUN {} " + '#'*60
+_FILL = 60
+_RUN_MSG = lambda i : '#'*_FILL + " RUN {} ".format(i).ljust(9, '#') + '#'*_FILL
 
 @app.command()
 def generate_results(runs:int=100):
@@ -23,12 +24,12 @@ def generate_results(runs:int=100):
     Recommend setting log level to warn in config.yml so that excessive logging is not generated.
     """
     # Initialise data structures
-    raw_data_df = None
-    result_dict = None
+    df_accumulate = None
+    dict_accumulate = None
 
     # Run l2d 'runs' times
     for i in progressbar(range(runs), redirect_stdout=True):
-        print(_RUN_MSG.format(i+1))
+        print(_RUN_MSG(i+1))
         main() # run l2d
 
         # Get report path
@@ -38,25 +39,28 @@ def generate_results(runs:int=100):
         with open(os.path.join(report_dir, "stats.json")) as f:
             latest_stats = json.load(f)
 
-        if raw_data_df is None:
-            raw_data_df = latest_raw
-            result_dict = {k:[] for k in latest_stats.keys()}
+        if df_accumulate is None:
+            df_accumulate = latest_raw
+            dict_accumulate = latest_stats
         
         else:
             # Collect results from each run
-            raw_data_df = pd.concat([raw_data_df, latest_raw])
-            for k in result_dict.keys():
-                result_dict[k].append(latest_stats[k])
+            df_accumulate = df_accumulate.add(latest_raw, fill_value=0)
+            for k in dict_accumulate.keys():
+                dict_accumulate[k] += latest_stats[k]
 
     # Average the data
-    mean_df   = raw_data_df.groupby(lambda idx: idx).mean()
-    mean_dict = {k:sum(v)/len(v) for k,v in result_dict.items()}
-        
+    df_mean = df_accumulate.div(runs)
+    dict_mean = {k: v / runs for k, v in dict_accumulate.items()}
+
+    print(df_mean)
+    print(dict_mean)
+
     # Generate report
     output_csv_path = os.path.join(os.getcwd(), OUTPUT_CSV)
-    mean_df.to_csv(output_csv_path, index=False)
+    df_mean.to_csv(output_csv_path, index=False)
     summary_plot(output_csv_path, os.path.join(os.getcwd(), OUTPUT_HTML))
-    summary_dict(os.path.join(os.getcwd(), OUTPUT_STATS_JSON), mean_dict)
+    summary_dict(os.path.join(os.getcwd(), OUTPUT_STATS_JSON), dict_mean)
 
 if __name__ == "__main__":
     app()

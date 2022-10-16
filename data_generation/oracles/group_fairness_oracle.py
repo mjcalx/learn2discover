@@ -2,7 +2,6 @@ import os
 import sys
 import pandas as pd
 from typing import List, Dict
-from data.enum import ParamType
 
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 datagen_path = os.path.join(root_path, 'data_generation')

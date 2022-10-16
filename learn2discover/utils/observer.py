@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from loggers.logger_factory import LoggerFactory
 from utils.logging_utils import Verbosity
 from typing import List
 

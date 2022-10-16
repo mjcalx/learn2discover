@@ -1,4 +1,3 @@
-import numpy as np
 from enum import Enum
 from datetime import datetime
 from configs.config_manager import ConfigManager

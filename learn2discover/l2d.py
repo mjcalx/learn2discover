@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 import pandas as pd
-from configs.config_manager import ConfigManager
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 current_path = os.path.join(root_path, 'learn2discover')

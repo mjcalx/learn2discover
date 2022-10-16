@@ -1,17 +1,15 @@
-import os
-import yaml
 from utils.loader_utils import LoaderUtils
 
 
 class ConfigManager:
     MODE_STR_TRAINING = 'train'
     MODE_STR_GENERATE = 'generate'
-    
+
     CONFIG_FILE_TRAINING = 'config.yml'
     CONFIG_FILE_GENERATE = '../data_generation/config.yml'
     MODES = {
-        MODE_STR_TRAINING : CONFIG_FILE_TRAINING, 
-        MODE_STR_GENERATE : CONFIG_FILE_GENERATE
+        MODE_STR_TRAINING: CONFIG_FILE_TRAINING,
+        MODE_STR_GENERATE: CONFIG_FILE_GENERATE
         }
 
     config_file = CONFIG_FILE_TRAINING
@@ -33,9 +31,9 @@ class ConfigManager:
 
 
     def __init__(self, 
-                 workspace_dir : str, 
-                 mode : str=None,
-                 config_file : str=None):
+                 workspace_dir: str,
+                 mode: str=None,
+                 config_file: str=None):
         if mode not in ConfigManager.MODES.keys():
             print(f'Defaulting to "{ConfigManager.MODE_STR_TRAINING}" mode')
             mode = ConfigManager.MODE_STR_TRAINING
@@ -78,13 +76,13 @@ class ConfigManager:
         self.data_file             = self.configs.get('generator_settings').get('data_file')
         self.index_column_included = self.configs.get('generator_settings').get('index_column_included')
         self.delimiter             = self.configs.get('generator_settings').get('delimiter')
-        
+
         self.output_csv = self.configs.get('output_settings').get('output_csv')
 
         assert isinstance(self.index_column_included, bool)
 
     def _load_training_configs(self) -> None:
-        _section = lambda section : self.configs.get(section)
+        _section   = lambda section : self.configs.get(section)
         DATASET    = _section('dataset_settings')
         HYPERPARAM = _section('model_hyperparameters')
         TRAINING   = _section('training_settings')

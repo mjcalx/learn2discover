@@ -1,6 +1,4 @@
-from typing import List, Callable, TypeVar
 import pandas as pd
-from data.enum import Outcome
 from loggers.logger_factory import LoggerFactory
 
 class AbstractMockOracle:

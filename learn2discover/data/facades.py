@@ -2,7 +2,6 @@ from typing import Dict
 import pandas as pd
 import torch
 
-from data.schema import Schema
 from data.enum import VarType
 from data.data_attributes import DataAttributes
 from data.ft_dataframe_dataset import FTDataFrameDataset

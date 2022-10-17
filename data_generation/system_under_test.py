@@ -12,8 +12,4 @@ class SystemUnderTest:
         return self.__class__.__name__
 
     def evaluate_outcomes(self, outputs: pd.DataFrame) -> pd.Series:
-        """
-        Determines the outcome for each data instance based on its output values.
-        Return a pandas Series of strings of Outcome values.
-        """
         pass

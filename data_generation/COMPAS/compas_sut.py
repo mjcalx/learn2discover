@@ -12,10 +12,6 @@ class Compas(SystemUnderTest):
         assert len(set(output_attributes).intersection(set(input_attributes))) == 0
 
     def evaluate_outcomes(self, outputs: pd.DataFrame) -> pd.Series:
-        """
-        Determines the outcome for each data instance based on its output values.
-        Return a pandas Series of strings of Outcome values.
-        """
         self.logger.debug("Evaluating SUT outcomes...")
         assign_outcome = lambda x : Outcome.FAIL.value if str(x["ScoreText"]) in ["High", "Medium", "nan"] else Outcome.PASS.value
         return outputs.apply(assign_outcome, axis=1)

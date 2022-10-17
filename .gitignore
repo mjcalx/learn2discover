@@ -1,4 +1,6 @@
 *.pyc
 .idea
+.vscode
 learn2discover/models
 learn2discover/report
+datasets/generated/*

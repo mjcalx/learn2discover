@@ -4,7 +4,7 @@ import pandas as pd
 import itertools
 
 from data.schema import Schema
-from data.enum import ParamType, VarType, Label
+from data.enum import ParamType, VarType
 from data.data_attributes import DataAttributes
 from utils.validation_utils import ValidationUtils
 from functools import reduce
@@ -18,9 +18,7 @@ class FTDataFrameDataset:
         assert isinstance(multi_indexed_data.columns, pd.MultiIndex)
         assert isinstance(schema, Schema)
         self.schema = schema
-        drop_nan_scoretext = lambda df : df.drop(index=df[df.isna()['OUTPUTS']['ScoreText'] == True].index).reset_index(drop=True)
-        preprocessors : List[Callable[[pd.DataFrame], pd.DataFrame]] = [drop_nan_scoretext]
-        self.dataframe = reduce(lambda f, g: g(f), preprocessors, multi_indexed_data)
+        self.dataframe = multi_indexed_data
 
         self._flat = None
         self._attributes = None

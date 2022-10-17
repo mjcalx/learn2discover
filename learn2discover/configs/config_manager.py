@@ -26,6 +26,9 @@ class ConfigManager:
     fair_csv_filename = 'fair.csv'
     unfair_csv_filename = 'unfair.csv'
 
+    input_attrs = []
+    output_attrs = []
+
     primary_logger_type = 'console'
     log_level = 'info'
 
@@ -76,7 +79,13 @@ class ConfigManager:
         self.data_file             = self.configs.get('generator_settings').get('data_file')
         self.index_column_included = self.configs.get('generator_settings').get('index_column_included')
         self.delimiter             = self.configs.get('generator_settings').get('delimiter')
-
+        self.input_attrs           = self.configs.get('generator_settings').get('input_attrs')
+        self.output_attrs          = self.configs.get('generator_settings').get('output_attrs')
+        self.sut_path              = self.configs.get('generator_settings').get('sut_path')
+        self.sut_name              = self.configs.get('generator_settings').get('sut_name')
+        self.oracle_path           = self.configs.get('generator_settings').get('oracle_path')
+        self.oracle_name           = self.configs.get('generator_settings').get('oracle_name')
+        
         self.output_csv = self.configs.get('output_settings').get('output_csv')
 
         assert isinstance(self.index_column_included, bool)

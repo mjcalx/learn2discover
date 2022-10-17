@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Dict
+from importlib import util
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 l2d_path = os.path.join(root_path, 'learn2discover')
@@ -12,28 +12,36 @@ except ValueError:
 from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
 from data_generator import DataGenerator
-from system_under_test import SystemUnderTest
-from oracles.abstract_mock_oracle import AbstractMockOracle
-
-#################Import SUT and Mock Oracle##############
-from compas.compas_sut import Compas
-from oracles.group_fairness_oracle import GroupFairnessOracle
-#########################################################
-
-SUT_TYPE    : SystemUnderTest    = Compas
-ORACLE_TYPE : AbstractMockOracle = GroupFairnessOracle
-ORACLE_ARGS : Dict               = {'sensitive_attributes': ["Sex_Code_Text", "Ethnic_Code_Text"]}
 
 if __name__=="__main__":
     """
     A generalised script for generating data for training.
-    
-    Modify SUT_TYPE, ORACLE_TYPE, and ORACLE_ARGS.
     """
     config  = ConfigManager(os.getcwd(), mode='generate')
 
-    sut    = SUT_TYPE()
-    oracle = ORACLE_TYPE(**ORACLE_ARGS)
+    sut_path = config.sut_path
+    sut_name = config.sut_name
+    sut_module_name = sut_path.split('.')[0].split('/')[-1]
+
+    oracle_path = config.oracle_path
+    oracle_name = config.oracle_name
+    oracle_module_name = oracle_path.split('.')[0].split('/')[-1]
+
+    # Load the SUT
+    sut_spec = util.spec_from_file_location(sut_module_name, sut_path)
+    sut_module = util.module_from_spec(sut_spec)
+    sys.modules[sut_module_name] = sut_module
+    sut_spec.loader.exec_module(sut_module)
+    sut_class = getattr(sut_module, sut_name)
+    sut = sut_class(config.input_attrs, config.output_attrs)
+
+    # Load the Mock Oracle
+    oracle_spec = util.spec_from_file_location(oracle_module_name, oracle_path)
+    oracle_module = util.module_from_spec(oracle_spec)
+    sys.modules[oracle_module_name] = oracle_module
+    oracle_spec.loader.exec_module(oracle_module)
+    oracle_class = getattr(oracle_module, oracle_name)
+    oracle = oracle_class(**sut.oracle_args)
 
     datamgr = DatasetManager(sut.attributes)
 

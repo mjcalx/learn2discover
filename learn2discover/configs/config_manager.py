@@ -28,9 +28,6 @@ class ConfigManager:
 
     input_attrs = []
     output_attrs = []
-    sensitive_attrs = []
-    evaluation_attr = ''
-    fail_vals = []
 
     primary_logger_type = 'console'
     log_level = 'info'
@@ -84,9 +81,10 @@ class ConfigManager:
         self.delimiter             = self.configs.get('generator_settings').get('delimiter')
         self.input_attrs           = self.configs.get('generator_settings').get('input_attrs')
         self.output_attrs          = self.configs.get('generator_settings').get('output_attrs')
-        self.sensitive_attrs       = self.configs.get('generator_settings').get('sensitive_attrs')
-        self.evaluation_attr       = self.configs.get('generator_settings').get('evaluation_attr')
-        self.fail_vals             = self.configs.get('generator_settings').get('fail_vals')
+        self.sut_path              = self.configs.get('generator_settings').get('sut_path')
+        self.sut_name              = self.configs.get('generator_settings').get('sut_name')
+        self.oracle_path           = self.configs.get('generator_settings').get('oracle_path')
+        self.oracle_name           = self.configs.get('generator_settings').get('oracle_name')
         
         self.output_csv = self.configs.get('output_settings').get('output_csv')
 

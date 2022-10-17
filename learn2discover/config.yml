@@ -17,13 +17,13 @@ training_settings:
       iterations:
         num_iterations: 5
       annotations:
-        num_annotations: 80
+        num_annotations: 30
       confidence:
         max_confidence: 95
 
 dataset_settings:
-  schema_file: ../datasets/schemas/schema_adult.yml
-  data_file: ../datasets/generated/adult.csv
+  schema_file: ../datasets/schemas/schema_compas.yml
+  data_file: ../datasets/generated/compas.csv
   index_column_included: true
   delimiter: ','
 

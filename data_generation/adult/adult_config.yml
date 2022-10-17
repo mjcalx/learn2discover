@@ -1,0 +1,19 @@
+generator_settings:
+  input_attrs: ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']
+  output_attrs: ['salary-prediction']
+  sut_name: Adult
+  oracle_name: GroupFairnessOracle
+  sut_path: adult/adult_sut.py
+  oracle_path: oracles/group_fairness_oracle.py
+  schema_file: ../datasets/schemas/schema_adult.yml
+  data_file: ../datasets/original/adult/adult_raw.csv
+  index_column_included: false
+  delimiter: ', '
+
+output_settings:
+  output_csv: ../datasets/generated/adult.csv
+
+log:
+  primary_logger_type: console
+  log_level: debug
+  verbosity: 0

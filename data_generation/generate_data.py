@@ -1,6 +1,7 @@
 import os
 import sys
 from importlib import util
+from os.path import basename, splitext
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 l2d_path = os.path.join(root_path, 'learn2discover')
@@ -11,41 +12,36 @@ except ValueError:
 
 from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
+
 from data_generator import DataGenerator
+
+
+def load_module_class(module_name: str, module_path: str):
+    module_basename = splitext(basename(module_path))[0]
+    _spec = util.spec_from_file_location(module_name, module_path)
+    _module = util.module_from_spec(_spec)
+    sys.modules[module_name] = _module
+    _spec.loader.exec_module(_module)
+    _class = getattr(_module, module_name)
+    return _class
 
 if __name__=="__main__":
     """
     A generalised script for generating data for training.
     """
-    config  = ConfigManager(os.getcwd(), mode='generate')
+    # Get paths for SUT and Mock Oracle
+    cfg  = ConfigManager(os.getcwd(), mode='generate')
 
-    sut_path = config.sut_path
-    sut_name = config.sut_name
-    sut_module_name = sut_path.split('.')[0].split('/')[-1]
-
-    oracle_path = config.oracle_path
-    oracle_name = config.oracle_name
-    oracle_module_name = oracle_path.split('.')[0].split('/')[-1]
-
-    # Load the SUT
-    sut_spec = util.spec_from_file_location(sut_module_name, sut_path)
-    sut_module = util.module_from_spec(sut_spec)
-    sys.modules[sut_module_name] = sut_module
-    sut_spec.loader.exec_module(sut_module)
-    sut_class = getattr(sut_module, sut_name)
-    sut = sut_class(config.input_attrs, config.output_attrs)
-
-    # Load the Mock Oracle
-    oracle_spec = util.spec_from_file_location(oracle_module_name, oracle_path)
-    oracle_module = util.module_from_spec(oracle_spec)
-    sys.modules[oracle_module_name] = oracle_module
-    oracle_spec.loader.exec_module(oracle_module)
-    oracle_class = getattr(oracle_module, oracle_name)
+    # Load the SUT and Mock Oracle
+    sut_class = load_module_class(cfg.sut_name, cfg.sut_path)
+    oracle_class = load_module_class(cfg.oracle_name, cfg.oracle_path)
+    sut = sut_class(cfg.input_attrs, cfg.output_attrs)
     oracle = oracle_class(**sut.oracle_args)
 
+    # Use loaded modules to generate dataset
     datamgr = DatasetManager(sut.attributes)
 
     data_generator = DataGenerator(sut, oracle)
     dataset = data_generator.generate_data()
 
-    dataset.to_csv(config.output_csv)
+    dataset.to_csv(cfg.output_csv)

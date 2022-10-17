@@ -7,9 +7,18 @@ status_of_existing_checking_account:
     A13 : "... >= 200       DM / salary assignments for at least 1 year"
     A14 : "no checking account"
 
-duration_in_month:
-  type: numerical
-  description: "Duration (in months)"
+duration_in_full_years:
+  type: categorical
+  description: "Duration in full years (range)"
+  values:
+    0 : " < 1 year"
+    1 : "1 <= years < 2"
+    2 : "2 <= years < 3"
+    3 : "3 <= years < 4"
+    4 : "4 <= years < 5"
+    5 : "5 <= years < 6"
+    6 : "6 <= years < 7"
+
 
 credit_history:
   type: categorical
@@ -35,9 +44,10 @@ loan_purpose:
     A49  : "business"
     A410 : "others"
 
-credit_amount:  
-  type: numerical
-  description: "Credit amount"
+credit_amount_range:  
+  type: categorical
+  description: "Credit amount range, in increments of 3000"
+  values: ["<= 3000", "<= 6000", "<= 9000", "<= 12000", "<= 15000", "<= 18000", "<= 21000"]
 
 savings_account:  
   type : categorical
@@ -89,9 +99,10 @@ property:
     A123 : "if not A121/A122 : car or other, not in attribute 6"
     A124 : "unknown / no property"
 
-age: 
-  type : numerical
-  description: "age in years"
+age_range: 
+  type : categorical
+  description: "age range in years, increments of 30"
+  values: ["<= 30", "<= 60", "> 60"]
 
 other_installment_plans: 
   type : categorical

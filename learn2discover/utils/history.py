@@ -15,6 +15,9 @@ class History():
             columns=df_cols
         )
     
+    def __getitem__(self, key: str):
+        return self.data[key]
+    
     @staticmethod
     def get_instance():
         if History.instance is None:

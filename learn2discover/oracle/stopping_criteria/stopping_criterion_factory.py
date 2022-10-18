@@ -21,6 +21,5 @@ class StoppingCriterionFactory:
         except KeyError:
             self.logger.debug(f'StoppingCriterion for "{type_selection}" not found. Defaulting to "iterations"')
             criterion = self.DEFAULT()
-        finally:
-            self.logger.info(f'Select StoppingCriterion for "{type_selection}" : {str(criterion.name)}', verbosity=Verbosity.BASE)
+        self.logger.info(f'Select StoppingCriterion for "{type_selection}" : {str(criterion.name)}', verbosity=Verbosity.BASE)
         return criterion

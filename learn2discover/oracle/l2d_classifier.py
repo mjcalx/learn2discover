@@ -185,9 +185,10 @@ class L2DClassifier(nn.Module, Subject):
 
         if not final_report:
             vloss = loss.item()
-            confidence = ClassifierUtils.get_confidence_from_log_probs(log_probs)
+            confidences = ClassifierUtils.get_confidence_from_log_probs(log_probs)
+            mean_confidence = sum(confidences)/len(confidences)
             accuracy = accuracy_score(labels, y_val)
-            self._data = (self._iteration, vloss, self.datamgr.data.training_data.count, accuracy, precision, confidence)
+            self._data = (self._iteration, vloss, self.datamgr.data.training_data.count, accuracy, precision, mean_confidence)
             self.notify()
 
         results = {'f': fscore, 'auc': auc, 'loss':loss, 

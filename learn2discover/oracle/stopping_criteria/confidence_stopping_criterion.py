@@ -1,11 +1,13 @@
-from utils.history import History
 from oracle.stopping_criteria.stopping_criterion import StoppingCriterion
+from utils.history import History
+
 
 class ConfidenceStoppingCriterion(StoppingCriterion):
     def __init__(self):
         super(ConfidenceStoppingCriterion, self).__init__()
         self.history = History.get_instance()
         self.conf = self.settings['max_confidence']
+        assert 0 < self.conf <= 1, f"Confidence threshold must be in range (0,1]. Got {self.conf}"
 
     @property
     def name(self):

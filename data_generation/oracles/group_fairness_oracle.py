@@ -57,7 +57,7 @@ class GroupFairnessOracle(AbstractMockOracle):
             filtered = data_inputs[sensitive_attribute][lambda x : x == sensitive_value]
             value_count = len(filtered)
             pass_count = len(outcomes[filtered.index][ lambda x : x == Outcome.PASS.value ])
-            scores[sensitive_value] = pass_count / value_count
+            scores[sensitive_value] = pass_count / value_count if value_count > 0 else 0
         return scores
 
     def _normalize_group_fairness_score(self, group_fairness_dict: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]:

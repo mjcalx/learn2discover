@@ -1,0 +1,42 @@
+generator_settings:
+  dataset: german_credit
+  input_attrs:
+    [
+      "status_of_existing_checking_account",
+      "duration_in_full_years",
+      "credit_history",
+      "loan_purpose",
+      "credit_amount_range",
+      "savings_account",
+      "present_employment_since",
+      "installment_rate",
+      "personal_status_and_sex",
+      "other_debtors_or_guarantors",
+      "present_residence_since",
+      "property",
+      "age_range",
+      "other_installment_plans",
+      "housing",
+      "existing_credits_at_this_bank",
+      "job",
+      "num_liable",
+      "telephone",
+      "is_foreign_worker"
+    ]
+  output_attrs: ["credit_label"]
+  sut_name: German
+  oracle_name: GroupFairnessOracle
+  sut_path: suts/german_credit/german_sut.py
+  oracle_path: oracles/group_fairness_oracle.py
+  schema_file: ../datasets/schemas/schema_german.yml
+  data_file: ../datasets/original/german/german-preprocessed.csv
+  index_column_included: false
+  delimiter: ","
+
+output_settings:
+  output_csv: ../datasets/generated/german.csv
+
+log:
+  primary_logger_type: console
+  log_level: debug
+  verbosity: 0

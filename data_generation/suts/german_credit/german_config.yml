@@ -26,7 +26,7 @@ generator_settings:
   output_attrs: ["credit_label"]
   sut_name: German
   oracle_name: GroupFairnessOracle
-  sut_path: german_credit/german_sut.py
+  sut_path: suts/german_credit/german_sut.py
   oracle_path: oracles/group_fairness_oracle.py
   schema_file: ../datasets/schemas/schema_german.yml
   data_file: ../datasets/original/german/german-preprocessed.csv

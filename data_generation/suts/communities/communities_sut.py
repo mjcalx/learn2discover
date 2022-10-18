@@ -1,8 +1,9 @@
 import pandas as pd
-from system_under_test import SystemUnderTest
 from data.enum import Outcome
+from suts.abstract_system_under_test import AbstractSystemUnderTest
 
-class Communities(SystemUnderTest):
+
+class Communities(AbstractSystemUnderTest):
 
     SENSITIVE_ATTRIBUTES =  ["racepctblack", "racePctWhite", "medIncome"]
 

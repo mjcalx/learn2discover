@@ -1,11 +1,13 @@
-from loggers.logger_factory import LoggerFactory
-from oracles.abstract_mock_oracle import AbstractMockOracle
-from system_under_test import SystemUnderTest
 from data.dataset_manager import DatasetManager
 from data.ft_dataframe_dataset import FTDataFrameDataset
+from loggers.logger_factory import LoggerFactory
+
+from oracles.abstract_mock_oracle import AbstractMockOracle
+from suts.abstract_system_under_test import AbstractSystemUnderTest
+
 
 class DataGenerator:
-    def __init__(self, sut: SystemUnderTest, oracle: AbstractMockOracle):
+    def __init__(self, sut: AbstractSystemUnderTest, oracle: AbstractMockOracle):
         """
         This class is a mediator between the DatasetManager, a SystemUnderTest 
         and some AbstractMockOracle.

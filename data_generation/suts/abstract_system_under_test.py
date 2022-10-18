@@ -1,8 +1,11 @@
-import pandas as pd
-from loggers.logger_factory import LoggerFactory
-from data.data_attributes import DataAttributes
+from abc import abstractmethod
 
-class SystemUnderTest:
+import pandas as pd
+from data.data_attributes import DataAttributes
+from loggers.logger_factory import LoggerFactory
+
+
+class AbstractSystemUnderTest:
     def __init__(self, input_attributes, output_attributes, oracle_args):
         self.logger = LoggerFactory.get_logger(self._type())
         self.attributes = DataAttributes(input_attributes, output_attributes)
@@ -11,6 +14,7 @@ class SystemUnderTest:
     def _type(self):
         return self.__class__.__name__
 
+    @abstractmethod
     def evaluate_outcomes(self, outputs: pd.DataFrame) -> pd.Series:
         """
         Determines the outcome for each data instance based on its output values.

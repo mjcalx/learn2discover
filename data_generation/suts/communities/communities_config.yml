@@ -16,7 +16,7 @@ generator_settings:
   output_attrs: ['ViolentCrimesPerPop']
   sut_name: Communities
   oracle_name: GroupFairnessOracle
-  sut_path: communities/communities_sut.py
+  sut_path: suts/communities/communities_sut.py
   oracle_path: oracles/group_fairness_oracle.py
   schema_file: ../datasets/schemas/schema_communities.yml
   data_file: ../datasets/original/communities/communities-preprocessed.csv

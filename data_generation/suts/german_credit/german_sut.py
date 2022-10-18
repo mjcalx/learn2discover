@@ -1,8 +1,9 @@
 import pandas as pd
-from system_under_test import SystemUnderTest
 from data.enum import Outcome
+from suts.abstract_system_under_test import AbstractSystemUnderTest
 
-class German(SystemUnderTest):
+
+class German(AbstractSystemUnderTest):
 
     SENSITIVE_ATTRIBUTES = ["personal_status_and_sex", "is_foreign_worker", "savings_account"]
 

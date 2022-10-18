@@ -7,7 +7,7 @@ generator_settings:
   output_attrs: ['DisplayText', 'RawScore', 'DecileScore', 'ScoreText', 'AssessmentType', 'IsCompleted', 'IsDeleted']
   sut_name: Compas
   oracle_name: GroupFairnessOracle
-  sut_path: COMPAS/compas_sut.py
+  sut_path: suts/COMPAS/compas_sut.py
   oracle_path: oracles/group_fairness_oracle.py
   schema_file: ../datasets/schemas/schema_compas.yml
   data_file: ../datasets/original/COMPAS/compas-scores-preprocessed.csv

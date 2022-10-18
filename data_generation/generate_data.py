@@ -1,7 +1,8 @@
 import os
 import sys
 from importlib import util
-from os.path import basename, splitext
+from os.path import basename, split, splitext
+from pathlib import Path
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 l2d_path = os.path.join(root_path, 'learn2discover')
@@ -44,4 +45,5 @@ if __name__=="__main__":
     data_generator = DataGenerator(sut, oracle)
     dataset = data_generator.generate_data()
 
+    Path(split(cfg.output_csv)[0]).mkdir(parents=True, exist_ok=True)
     dataset.to_csv(cfg.output_csv)

@@ -51,10 +51,6 @@ run the `generate_data.py` file through your ide or run the command `python gene
 in your terminal whilst in the correct directory. This will generate the file you specified
 within the `config.yml` file. 
 
-*note you may need to also create the folder, in the base
-version of learn2discover the folder `generated` must be created within the `datasets` folder
-in order for the output to be generated.
-
 
 ## Learn2Discover
 

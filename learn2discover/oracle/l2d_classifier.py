@@ -1,24 +1,24 @@
+import datetime
 import os
 import re
-import datetime
+from pathlib import Path
+from typing import Dict, List, Tuple
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import (
-    accuracy_score, roc_curve, roc_auc_score, precision_score, recall_score, f1_score
-)
-from typing import List, Tuple, Dict
-from pathlib import Path
-
 from configs.config_manager import ConfigManager
 from data.dataset_manager import DatasetManager
-from data.enum import ParamType, Label, VarType
+from data.enum import Label, ParamType, VarType
 from loggers.logger_factory import LoggerFactory
+from sklearn.metrics import (accuracy_score, f1_score, precision_score,
+                             recall_score, roc_auc_score, roc_curve)
+from utils.classifier_utils import ClassifierUtils
 from utils.logging_utils import Verbosity
 from utils.observer import Subject
-from utils.classifier_utils import ClassifierUtils
+
 
 class HalvedCeilingFn:
     """
@@ -157,8 +157,8 @@ class L2DClassifier(nn.Module, Subject):
             self.logger.debug(f'epoch: {e:3} loss: {single_loss.item():10.10f}', verbosity=Verbosity.CHATTY)
 
         # Evaluate model at each iteration
-        test_idxs_shuffled = self.datamgr.shuffle(self.datamgr.data.test_data.index)
-        self.evaluate_model(test_idxs_shuffled)
+        valid_idxs_shuffled = self.datamgr.shuffle(self.datamgr.data.validation_data.index)
+        self.evaluate_model(valid_idxs_shuffled)
 
 
     def evaluate_model(self, eval_idxs: pd.Index, final_report=False) -> Dict[str, object]:

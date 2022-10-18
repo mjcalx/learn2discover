@@ -1,0 +1,307 @@
+state:
+  type: numerical
+
+county:
+  type: numerical
+
+community:
+  type: numerical
+
+fold:
+  type: numerical
+
+population:
+  type: numerical
+
+householdsize:
+  type: numerical
+
+racepctblack:
+  type: categorical
+  values: ["<=0.2", "<=0.4", "<=0.6", "<=0.8", "<1", "1"]
+
+racePctWhite:
+  type: categorical
+  values: ["<=0.2", "<=0.4", "<=0.6", "<=0.8", "<1", "1"]
+
+racePctAsian:
+  type: categorical
+  values: ["<=0.2", "<=0.4", "<=0.6", "<=0.8", "<1", "1"]
+
+racePctHisp:
+  type: categorical
+  values: ["<=0.2", "<=0.4", "<=0.6", "<=0.8", "<1", "1"]
+
+agePct12t21:
+  type: numerical
+
+agePct12t29:
+  type: numerical
+
+agePct16t24:
+  type: numerical
+
+agePct65up:
+  type: numerical
+
+numbUrban:
+  type: numerical
+
+pctUrban:
+  type: numerical
+
+medIncome:
+  type: categorical
+  values: ["Low", "Medium", "High"]
+
+pctWWage:
+  type: numerical
+
+pctWFarmSelf:
+  type: numerical
+
+pctWInvInc:
+  type: numerical
+
+pctWSocSec:
+  type: numerical
+
+pctWPubAsst:
+  type: numerical
+
+pctWRetire:
+  type: numerical
+
+medFamInc:
+  type: numerical
+
+perCapInc:
+  type: numerical
+
+whitePerCap:
+  type: numerical
+
+blackPerCap:
+  type: numerical
+
+indianPerCap:
+  type: numerical
+
+AsianPerCap:
+  type: numerical
+
+OtherPerCap:
+  type: numerical
+
+HispPerCap:
+  type: numerical
+
+NumUnderPov:
+  type: numerical
+
+PctPopUnderPov:
+  type: numerical
+
+PctLess9thGrade:
+  type: numerical
+
+PctNotHSGrad:
+  type: numerical
+
+PctBSorMore:
+  type: numerical
+
+PctUnemployed:
+  type: numerical
+
+PctEmploy:
+  type: numerical
+
+PctEmplManu:
+  type: numerical
+
+PctEmplProfServ:
+  type: numerical
+
+PctOccupManu:
+  type: numerical
+
+PctOccupMgmtProf:
+  type: numerical
+
+MalePctDivorce:
+  type: numerical
+
+MalePctNevMarr:
+  type: numerical
+
+FemalePctDiv:
+  type: numerical
+
+TotalPctDiv:
+  type: numerical
+
+PersPerFam:
+  type: numerical
+
+PctFam2Par:
+  type: numerical
+
+PctKids2Par:
+  type: numerical
+
+PctYoungKids2Par:
+  type: numerical
+
+PctTeen2Par:
+  type: numerical
+
+PctWorkMomYoungKids:
+  type: numerical
+
+PctWorkMom:
+  type: numerical
+
+NumIlleg:
+  type: numerical
+
+PctIlleg:
+  type: numerical
+
+NumImmig:
+  type: numerical
+
+PctImmigRecent:
+  type: numerical
+
+PctImmigRec5:
+  type: numerical
+
+PctImmigRec8:
+  type: numerical
+
+PctImmigRec10:
+  type: numerical
+
+PctRecentImmig:
+  type: numerical
+
+PctRecImmig5:
+  type: numerical
+
+PctRecImmig8:
+  type: numerical
+
+PctRecImmig10:
+  type: numerical
+
+PctSpeakEnglOnly:
+  type: numerical
+
+PctNotSpeakEnglWell:
+  type: numerical
+
+PctLargHouseFam:
+  type: numerical
+
+PctLargHouseOccup:
+  type: numerical
+
+PersPerOccupHous:
+  type: numerical
+
+PersPerOwnOccHous:
+  type: numerical
+
+PersPerRentOccHous:
+  type: numerical
+
+PctPersOwnOccup:
+  type: numerical
+
+PctPersDenseHous:
+  type: numerical
+
+PctHousLess3BR:
+  type: numerical
+
+MedNumBR:
+  type: numerical
+
+HousVacant:
+  type: numerical
+
+PctHousOccup:
+  type: numerical
+
+PctHousOwnOcc:
+  type: numerical
+
+PctVacantBoarded:
+  type: numerical
+
+PctVacMore6Mos:
+  type: numerical
+
+MedYrHousBuilt:
+  type: numerical
+
+PctHousNoPhone:
+  type: numerical
+
+PctWOFullPlumb:
+  type: numerical
+
+OwnOccLowQuart:
+  type: numerical
+
+OwnOccMedVal:
+  type: numerical
+
+OwnOccHiQuart:
+  type: numerical
+
+RentLowQ:
+  type: numerical
+
+RentMedian:
+  type: numerical
+
+RentHighQ:
+  type: numerical
+
+MedRent:
+  type: numerical
+
+MedRentPctHousInc:
+  type: numerical
+
+MedOwnCostPctInc:
+  type: numerical
+
+MedOwnCostPctIncNoMtg:
+  type: numerical
+
+NumInShelters:
+  type: numerical
+
+NumStreet:
+  type: numerical
+
+PctForeignBorn:
+  type: numerical
+
+PctBornSameState:
+  type: numerical
+
+PctSameHouse85:
+  type: numerical
+
+PctSameCity85:
+  type: numerical
+
+PctSameState85:
+  type: numerical
+
+ViolentCrimesPerPop:
+  type: numerical

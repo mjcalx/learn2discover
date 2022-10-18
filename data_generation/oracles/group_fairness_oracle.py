@@ -1,7 +1,8 @@
 import os
 import sys
+from typing import Dict, List
+
 import pandas as pd
-from typing import List, Dict
 
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 datagen_path = os.path.join(root_path, 'data_generation')
@@ -10,9 +11,11 @@ try:
 except ValueError:
     sys.path.append(datagen_path)
 
-from data.enum import Label, Outcome
 from data.dataset_manager import DatasetManager
+from data.enum import Label, Outcome
+
 from oracles.abstract_mock_oracle import AbstractMockOracle
+
 
 class GroupFairnessOracle(AbstractMockOracle):
     def __init__(self, sensitive_attributes: List[str]):
@@ -58,7 +61,7 @@ class GroupFairnessOracle(AbstractMockOracle):
             value_count = len(filtered)
             pass_count = len(outcomes[filtered.index][ lambda x : x == Outcome.PASS.value ])
             scores[sensitive_value] = pass_count / value_count if value_count > 0 else 0
-        return scores
+        return {key: scores[key] for key in scores if scores[key] != 0}
 
     def _normalize_group_fairness_score(self, group_fairness_dict: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]:
         """

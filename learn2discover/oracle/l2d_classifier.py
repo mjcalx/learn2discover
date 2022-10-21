@@ -179,9 +179,9 @@ class L2DClassifier(nn.Module, Subject):
         fpr, tpr, _ = roc_curve(labels, y_val)
 
         accuracy = accuracy_score(labels, y_val)
-        precision = precision_score(labels, y_val)
-        recall = recall_score(labels, y_val)
-        fscore = f1_score(labels, y_val)
+        precision = precision_score(labels, y_val, pos_label=Label.POS_LABEL())
+        recall = recall_score(labels, y_val, pos_label=Label.POS_LABEL())
+        fscore = f1_score(labels, y_val, pos_label=Label.POS_LABEL())
 
         if not final_report:
             vloss = loss.item()

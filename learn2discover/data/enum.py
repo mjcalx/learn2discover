@@ -1,11 +1,21 @@
 from enum import Enum
 
+
 class Label(Enum):
     """
     A binary label with values "Fair" and "Unfair"
     """
     FAIR = 'FAIR'
     UNFAIR = 'UNFAIR'
+
+    @staticmethod
+    def ordering():
+        return [Label.FAIR.value, Label.UNFAIR.value]
+    
+    # TODO MOVE SOMEWHERE ELSE
+    @staticmethod
+    def POS_LABEL():
+        return 1
 
 
 class Outcome(Enum):

@@ -1,13 +1,16 @@
-from typing import Callable
-from copy import copy
-import pandas as pd
 import itertools
-
-from data.schema import Schema
-from data.enum import ParamType, VarType
-from data.data_attributes import DataAttributes
-from utils.validation_utils import ValidationUtils
+from copy import copy
 from functools import reduce
+from typing import Callable, List
+
+import pandas as pd
+from pandas.api.types import CategoricalDtype
+from utils.validation_utils import ValidationUtils
+
+from data.data_attributes import DataAttributes
+from data.enum import Label, ParamType, VarType
+from data.schema import Schema
+
 
 class FTDataFrameDataset:
     def __init__(self, schema: Schema, multi_indexed_data: pd.DataFrame):
@@ -29,7 +32,7 @@ class FTDataFrameDataset:
         self._attributes = DataAttributes(inputs, outputs)
         assert self._attributes is not None
         self._preprocess_categorical_variables()
-        self._preprocess_categorical_variables(self.fairness_labels)
+        self._preprocess_categorical_variables(self.fairness_labels, ordered_categories=Label.ordering()) 
         self.flat_index()
 
     def __len__(self):
@@ -90,10 +93,14 @@ class FTDataFrameDataset:
         return self.schema.vars_by_type(VarType.CATEGORICAL)
 
 
-    def _preprocess_categorical_variables(self, series: pd.Series=None) -> None:
+    def _preprocess_categorical_variables(self, series: pd.Series=None, ordered_categories: List[str]=None) -> None:
+        categories = 'category'
         if series is not None:
             assert series.name in self.all_columns.columns
-            self.dataframe.loc(axis=1)[:, series.name] = series.astype('category')
+            if ordered_categories is not None:
+                categories = CategoricalDtype(categories=ordered_categories, ordered=True)
+            self.dataframe.loc(axis=1)[:, series.name] = series.astype(categories)
+            self.dataframe.loc(axis=1)
             return
         for cname in self._categorical_variables():
             self.dataframe.loc(axis=1)[:, cname] = self.dataframe.loc(axis=1)[:, cname].astype('category')

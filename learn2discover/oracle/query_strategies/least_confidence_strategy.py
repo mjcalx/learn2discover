@@ -43,7 +43,7 @@ class LeastConfidenceStrategy(QueryStrategy):
 
                 y_pred = classifier(categorical_tensors[None, i], numerical_tensors[None, i])
                 self.logger.debug(f'LOG_PROBS: {y_pred}', verbosity=Verbosity.CHATTY)
-                confs = ClassifierUtils.get_confidence_from_log_probs(y_pred).pop()
+                conf = ClassifierUtils.get_confidence_from_log_probs(y_pred).pop()
                 confidences.append((id,conf))
 
         # Return the ids of least confidence from those sampled
